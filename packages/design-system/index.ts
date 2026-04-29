@@ -1,4 +1,16 @@
 export { colors } from './src/tokens.ts';
 export type { ThemeName, ColorToken } from './src/tokens.ts';
+export { colorsHex } from './src/colorsHex.ts';
+export type { ColorHexTheme, ColorHexToken } from './src/colorsHex.ts';
 export { fonts, role } from './src/fonts.ts';
 export type { FontFamily, FontRole } from './src/fonts.ts';
+export { copy } from './src/copy.ts';
+export type { CopyLang, CopyShape, OnboardingCopy, FirstChatCopy } from './src/copy.ts';
+export { spacing } from './src/spacing.ts';
+export type { SpacingToken } from './src/spacing.ts';
+export { radius } from './src/radius.ts';
+export type { RadiusToken } from './src/radius.ts';
+export { shadow } from './src/shadow.ts';
+export type { ShadowToken } from './src/shadow.ts';
+export { motion } from './src/motion.ts';
+export type { MotionToken } from './src/motion.ts';

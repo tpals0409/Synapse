@@ -5,4 +5,5 @@ export type Message = {
   role: Role;
   content: string;
   ts: number;
+  latency_ms?: number;
 };

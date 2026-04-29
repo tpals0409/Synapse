@@ -1,2 +1,2 @@
-export { send } from './src/loop.ts';
-export type { SendDeps } from './src/loop.ts';
+export { send, sendStream } from './src/loop.ts';
+export type { SendDeps, SendStreamDeps } from './src/loop.ts';
