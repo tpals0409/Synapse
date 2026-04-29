@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  recall,
   type Concept,
   type GraphEdge,
   type RecallCandidate,
@@ -41,9 +40,3 @@ test('RecallCandidate enumerates reason semantic|bridge|temporal|domain_crossing
   assert.equal(cands[3]?.sourceMessageId, 'm1');
 });
 
-test('recall is a stub that rejects in sprint 0', async () => {
-  await assert.rejects(
-    () => recall({ recentMessages: [] }),
-    /not implemented in sprint 0/,
-  );
-});

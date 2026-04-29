@@ -1,0 +1,14 @@
+{
+  "name": "@synapse/receipt-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sprint 4 receipt 진입점 묶음. workspace alias 가 자기 디렉토리의 node_modules 에서 resolve 되도록 패키지 형태로 둔다.",
+  "dependencies": {
+    "@synapse/storage": "workspace:*",
+    "@synapse/engine": "workspace:*",
+    "@synapse/orchestrator": "workspace:*",
+    "@synapse/conversation": "workspace:*",
+    "@synapse/protocol": "workspace:*"
+  }
+}

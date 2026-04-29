@@ -1,4 +1,10 @@
-import type { Message } from '@synapse/protocol';
+import type {
+  Message,
+  RecallCandidate,
+  RecallLogRow,
+  DecideContext,
+  DecisionAct,
+} from '@synapse/protocol';
 import {
   appendMessage,
   appendConcept,
@@ -11,13 +17,17 @@ import {
   extractConcepts as defaultExtractConcepts,
   embedConcept as defaultEmbedConcept,
   buildEdges as defaultBuildEdges,
+  recallCandidates as defaultRecallCandidates,
   DEFAULT_SEMANTIC_THRESHOLD,
   type Concept,
   type GraphEdge,
   type NearestFn as EngineNearestFn,
+  type NearestRecallFn,
+  type TraverseFn,
   type NearestHit,
   type EmbeddedConcept,
 } from '@synapse/engine';
+import { decide as defaultDecide, applySilence } from '@synapse/orchestrator';
 
 export type SendDeps = {
   db: Database;
@@ -80,10 +90,55 @@ export type MemoryFormationDeps = {
   logger?: Logger;
 };
 
+/**
+ * Sprint 4 Recall hook DI.
+ *
+ * - `recall`: user message → RecallCandidate[]. Default thin-wraps `engine.recallCandidates`;
+ *   nearest/traverse 미주입 시 engine 의 empty-graph 관용 처리로 [] 반환.
+ *   storage adapter 결합은 mobile chatStore wiring (D-S4-chatStore-recall-wiring) 책임.
+ * - `decide`: DecideContext → DecisionAct (4 원). Default = `orchestrator.decide`.
+ *   silence 후처리(applySilence)는 conversation 이 정적 import 로 항상 호출
+ *   (D-S4-conversation-orchestrator-dep).
+ * - `recallStore`: 결정 로그 push + 최근 N ms 조회. mobile platform-adapter 가 native/web
+ *   구현 주입 (carry-over 5).
+ */
+export type RecallFn = (
+  userMessage: string,
+  opts: {
+    db: Database;
+    embed?: (text: string) => Promise<Float32Array>;
+    nearest?: NearestRecallFn;
+    traverse?: TraverseFn;
+    semanticThreshold?: number;
+    k?: number;
+  },
+) => Promise<RecallCandidate[]>;
+
+export type DecideFn = (ctx: DecideContext) => DecisionAct;
+
+export type RecallStore = {
+  push: (row: RecallLogRow) => void | Promise<void>;
+  getRecent: (withinMs: number) => RecallLogRow[];
+};
+
+export type RecallHookDeps = {
+  /** Override Recall candidate generation. Default: `@synapse/engine`'s `recallCandidates`. */
+  recall?: RecallFn;
+  /** Override DecisionAct classification. Default: `@synapse/orchestrator`'s `decide`. */
+  decide?: DecideFn;
+  /** Decision log + recent-window query. Hook is a no-op if omitted. */
+  recallStore?: RecallStore;
+  /** Approximate token budget for the upcoming completion. Forwarded to `decide` ctx. */
+  tokenContext?: number;
+  /** Cooldown / recent-window for `recallStore.getRecent`. Default: 60_000 ms. */
+  recentWindowMs?: number;
+};
+
 export type SendStreamDeps = {
   db: Database;
   completeStream?: (prompt: string) => AsyncIterable<string>;
-} & MemoryFormationDeps;
+} & MemoryFormationDeps &
+  RecallHookDeps;
 
 export async function send(text: string, deps: SendDeps): Promise<string> {
   const complete = deps.complete ?? gemma.complete;
@@ -114,6 +169,7 @@ export async function* sendStream(
   deps: SendStreamDeps,
 ): AsyncIterable<string> {
   const completeStream = deps.completeStream ?? gemma.completeStream;
+  const logger: Logger = deps.logger ?? console;
 
   const ts0 = Date.now();
   const userMsg: Message = {
@@ -124,8 +180,15 @@ export async function* sendStream(
   };
   appendMessage(deps.db, userMsg);
 
+  // Sprint 4 Recall hook — user append 직후 + assistant 첫 chunk 도달 *전*.
+  // fire-and-forget; recall/decide 실패는 user reply 흐름과 격리 (silent fallback).
+  // Sprint 5 hook 주석: Bridge / Temporal / Domain Crossing 추가 진입점은 본 hook 내부의
+  // recall() 어댑터를 확장 (recallCandidates → bridgeCandidates ∪ temporalCandidates ∪ ...).
+  void runRecallHook(text, ts0, deps).catch((err) => {
+    logger.warn('synapse/conversation: recall hook failed', err);
+  });
+
   let acc = '';
-  // Sprint 4: orchestrator.decide(...) gate goes here — silence default keeps yield path open
   for await (const chunk of completeStream(text)) {
     acc += chunk;
     yield chunk;
@@ -142,10 +205,46 @@ export async function* sendStream(
   appendMessage(deps.db, asstMsg);
 
   // Sprint 3 memory-formation hook — fire-and-forget; failures are logged, never surface to user.
-  const logger: Logger = deps.logger ?? console;
   void runMemoryFormation(text, deps).catch((err) => {
     logger.warn('synapse/conversation: memory-formation hook failed', err);
   });
+}
+
+const DEFAULT_RECENT_WINDOW_MS = 60_000;
+
+async function runRecallHook(
+  userMessage: string,
+  userTs: number,
+  deps: { db: Database } & RecallHookDeps,
+): Promise<void> {
+  const store = deps.recallStore;
+  if (store === undefined) return;
+
+  const recall: RecallFn = deps.recall ?? defaultRecallCandidates;
+  const decideFn: DecideFn = deps.decide ?? defaultDecide;
+  const windowMs = deps.recentWindowMs ?? DEFAULT_RECENT_WINDOW_MS;
+
+  const candidates = await recall(userMessage, { db: deps.db });
+
+  const ctx: DecideContext = {
+    userMessage,
+    candidates,
+    recencyMs: Date.now() - userTs,
+    tokenContext: deps.tokenContext ?? 0,
+    recentDecisions: store.getRecent(windowMs),
+  };
+
+  const decision = decideFn(ctx);
+  const final = applySilence(decision, ctx);
+
+  const row: RecallLogRow = {
+    id: crypto.randomUUID(),
+    decided_at: Date.now(),
+    act: final.act,
+    candidate_ids: candidates.map((c) => c.conceptId),
+    suppressed_reason: final.suppressedReason,
+  };
+  await store.push(row);
 }
 
 export async function runMemoryFormation(

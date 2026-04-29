@@ -49,3 +49,55 @@ test('motion.ghostBreathe.from/to is 1 → 0 (out-fade single direction)', () =>
   assert.equal(motion.ghostBreathe.from.opacity, 1);
   assert.equal(motion.ghostBreathe.to.opacity, 0);
 });
+
+// Sprint 4 (T6) — synapse-pulse / recall-emerge / thread-draw / node-orbit 정식 노출.
+test('motion.synapsePulse 정식 노출 (carry-over 16): duration / iterations / 키프레임', () => {
+  assert.ok(motion.synapsePulse);
+  assert.equal(motion.synapsePulse.duration, 2400);
+  assert.equal(motion.synapsePulse.easing, 'ease-in-out');
+  assert.equal(motion.synapsePulse.iterations, 'infinite');
+  // styles.css @keyframes synapse-pulse: 0,100%{opacity:0.55, scale:1}  50%{opacity:1, scale:1.18}
+  assert.equal(motion.synapsePulse.from.opacity, 0.55);
+  assert.equal(motion.synapsePulse.from.scale, 1);
+  assert.equal(motion.synapsePulse.mid.opacity, 1);
+  assert.equal(motion.synapsePulse.mid.scale, 1.18);
+  assert.equal(motion.synapsePulse.to.opacity, 0.55);
+  assert.equal(motion.synapsePulse.to.scale, 1);
+});
+
+test('motion.recallEmerge: blur 4→0 with 60% mid blur:0 + scale·translate', () => {
+  assert.ok(motion.recallEmerge);
+  assert.equal(motion.recallEmerge.duration, 600);
+  assert.equal(motion.recallEmerge.easing, 'cubic-bezier(.2,.7,.3,1)');
+  assert.equal(motion.recallEmerge.from.opacity, 0);
+  assert.equal(motion.recallEmerge.from.translateY, 12);
+  assert.equal(motion.recallEmerge.from.scale, 0.96);
+  assert.equal(motion.recallEmerge.from.blur, 4);
+  assert.equal(motion.recallEmerge.mid.blur, 0);
+  assert.equal(motion.recallEmerge.to.opacity, 1);
+  assert.equal(motion.recallEmerge.to.translateY, 0);
+  assert.equal(motion.recallEmerge.to.scale, 1);
+});
+
+test('motion.threadDraw: stroke-dashoffset 80 → 0', () => {
+  assert.ok(motion.threadDraw);
+  assert.equal(motion.threadDraw.duration, 600);
+  assert.equal(motion.threadDraw.from.strokeDashoffset, 80);
+  assert.equal(motion.threadDraw.to.strokeDashoffset, 0);
+});
+
+test('motion.nodeOrbit: 2.4s linear infinite, radius 14', () => {
+  assert.ok(motion.nodeOrbit);
+  assert.equal(motion.nodeOrbit.duration, 2400);
+  assert.equal(motion.nodeOrbit.easing, 'linear');
+  assert.equal(motion.nodeOrbit.iterations, 'infinite');
+  assert.equal(motion.nodeOrbit.radius, 14);
+  assert.equal(motion.nodeOrbit.from.rotate, 0);
+  assert.equal(motion.nodeOrbit.to.rotate, 360);
+});
+
+test('motion: 신규 토큰 모두 number duration (RN 호환, NO css string)', () => {
+  for (const token of ['synapsePulse', 'recallEmerge', 'threadDraw', 'nodeOrbit'] as const) {
+    assert.equal(typeof motion[token].duration, 'number', `${token}.duration must be number`);
+  }
+});

@@ -19,5 +19,15 @@ export type {
   NearestFn,
   NearestHit,
 } from './src/buildEdges.ts';
-export { recall } from './src/recall.ts';
-export type { RecallContext } from './src/recall.ts';
+export {
+  recallCandidates,
+  DEFAULT_RECALL_SEMANTIC_THRESHOLD,
+  DEFAULT_RECALL_K,
+} from './src/recall.ts';
+export type {
+  RecallCandidatesOptions,
+  NearestRecallFn,
+  NearestRecallHit,
+  TraverseFn,
+  TraverseHit,
+} from './src/recall.ts';

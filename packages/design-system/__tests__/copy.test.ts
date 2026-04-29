@@ -61,3 +61,42 @@ test('copy.{ko,en}.firstChat.capturedSub 1:1 with 디자인 목업 COPY.captured
   assert.equal(copy.ko.firstChat.capturedSub, '이 생각은 당신의 그래프에 연결됐어요');
   assert.equal(copy.en.firstChat.capturedSub, 'Linked into your graph');
 });
+
+// Sprint 4 (T6) — Recall L1/L2/L3 + Inspector 카피 1:1.
+test('copy.ko.recall.* 1:1 with 디자인 목업 COPY.{ghostLabel, suggestionLabel, strongLabel, inspector, inspectorSub}', () => {
+  assert.equal(copy.ko.recall.ghost.title, '그날의 너');
+  assert.equal(copy.ko.recall.suggestion.title, '관련 기억');
+  assert.equal(copy.ko.recall.strong.title, '다시 떠오른 생각');
+  assert.equal(copy.ko.recall.inspector.title, '기억');
+  assert.equal(copy.ko.recall.inspector.subtitle, '당신이 남긴 흔적');
+});
+
+test('copy.en.recall.* 1:1 with 디자인 목업 COPY (영문 라벨 + inspector subtitle)', () => {
+  assert.equal(copy.en.recall.ghost.title, 'From you, before');
+  assert.equal(copy.en.recall.suggestion.title, 'Related memory');
+  assert.equal(copy.en.recall.strong.title, 'A returning thought');
+  assert.equal(copy.en.recall.inspector.title, 'Memory');
+  assert.equal(copy.en.recall.inspector.subtitle, "Traces you've left");
+});
+
+test('copy: recall.{ghost,suggestion,strong}.subtitle 은 화면 ChatHeader 한 줄과 일치', () => {
+  // 디자인 목업 screens.jsx 의 ChatHeader subtitle 형식 ("Ghost Hint · 레벨 1" 등) 을 정규화.
+  assert.equal(copy.ko.recall.ghost.subtitle, 'Ghost Hint · 레벨 1');
+  assert.equal(copy.ko.recall.suggestion.subtitle, 'Suggestion · 레벨 2');
+  assert.equal(copy.ko.recall.strong.subtitle, 'Strong Recall · 레벨 3');
+  assert.equal(copy.en.recall.ghost.subtitle, 'ghost hint · level 1');
+  assert.equal(copy.en.recall.suggestion.subtitle, 'suggestion · level 2');
+  assert.equal(copy.en.recall.strong.subtitle, 'strong recall · level 3');
+});
+
+test('copy: recall 4 surfaces (ghost/suggestion/strong/inspector) 모두 RecallSurfaceCopy 형태 (title + subtitle)', () => {
+  for (const lang of ['ko', 'en'] as const) {
+    for (const surface of ['ghost', 'suggestion', 'strong', 'inspector'] as const) {
+      const v = copy[lang].recall[surface];
+      assert.equal(typeof v.title, 'string', `${lang}.recall.${surface}.title`);
+      assert.equal(typeof v.subtitle, 'string', `${lang}.recall.${surface}.subtitle`);
+      assert.ok(v.title.length > 0);
+      assert.ok(v.subtitle.length > 0);
+    }
+  }
+});

@@ -41,3 +41,33 @@ export function appendEdge(db: Database, edge: GraphEdge): void {
   });
   tx();
 }
+
+export type EdgeKind = 'co_occur' | 'semantic';
+
+export type TraverseHit = {
+  conceptId: string;
+  weight: number;
+  kind: EdgeKind;
+};
+
+// 1-hop 무방향 traverse. depth ≥ 2 는 Sprint 5+ Hyper-Recall 대상.
+// 자기 자신 (other === conceptId) 은 결과에서 제외 (self-loop edge 가 있더라도).
+export function traverse(
+  db: Database,
+  conceptId: string,
+  depth: number = 1,
+): TraverseHit[] {
+  if (depth !== 1) {
+    throw new Error(`traverse: depth=${depth} not supported (Sprint 4 = depth=1 only)`);
+  }
+  const rows = db
+    .prepare(
+      `SELECT to_id AS other, weight, kind FROM edges WHERE from_id = ?
+       UNION ALL
+       SELECT from_id AS other, weight, kind FROM edges WHERE to_id = ?`,
+    )
+    .all(conceptId, conceptId) as { other: string; weight: number; kind: EdgeKind }[];
+  return rows
+    .filter((r) => r.other !== conceptId)
+    .map((r) => ({ conceptId: r.other, weight: r.weight, kind: r.kind }));
+}

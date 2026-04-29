@@ -16,7 +16,8 @@
     "@synapse/protocol": "workspace:*",
     "@synapse/storage": "workspace:*",
     "@synapse/llm": "workspace:*",
-    "@synapse/engine": "workspace:*"
+    "@synapse/engine": "workspace:*",
+    "@synapse/orchestrator": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

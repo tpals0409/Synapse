@@ -17,8 +17,18 @@
 //   COPY.ko.retry             → copy.ko.firstChat.retry
 //   COPY.ko.typing            → copy.ko.firstChat.typing           (응답 대기 인디케이터)
 //
-// (목업 COPY 의 ghost/suggestion/strong/hyper/inspector/captured 등 이후 스프린트에서 쓰는
-//  키는 의도적으로 *제외*. Sprint 1 화면 범위를 벗어남.)
+// Sprint 4 (T6) 추가 — recall.* 영역 (Ghost / Suggestion / Strong / Inspector):
+//   COPY.ko.ghostLabel        → copy.ko.recall.ghost.title         ("그날의 너")
+//   COPY.ko.suggestionLabel   → copy.ko.recall.suggestion.title    ("관련 기억")
+//   COPY.ko.strongLabel       → copy.ko.recall.strong.title        ("다시 떠오른 생각")
+//   COPY.ko.inspector         → copy.ko.recall.inspector.title     ("기억")
+//   COPY.ko.inspectorSub      → copy.ko.recall.inspector.subtitle  ("당신이 남긴 흔적")
+//   subtitle 키 (ghost / suggestion / strong) 는 디자인 목업 화면 ChatHeader 의 한 줄
+//     ("Ghost Hint · 레벨 1" / "Suggestion · 레벨 2" / "Strong Recall · 레벨 3")
+//     을 카피 단일 진실원 트리로 정규화. en: "ghost hint · level 1" / ...
+//
+// (Hyper-Recall / Humble Retraction / Bridge / dismiss / never / expand / collapse 등은
+//  이후 스프린트 범위 — 의도적 제외.)
 
 export interface OnboardingCopy {
   hi: string;
@@ -39,11 +49,24 @@ export interface FirstChatCopy {
   typing: string;
 }
 
+export interface RecallSurfaceCopy {
+  title: string;
+  subtitle: string;
+}
+
+export interface RecallCopy {
+  ghost: RecallSurfaceCopy;
+  suggestion: RecallSurfaceCopy;
+  strong: RecallSurfaceCopy;
+  inspector: RecallSurfaceCopy;
+}
+
 export interface CopyShape {
   appName: string;
   tagline: string;
   onboarding: OnboardingCopy;
   firstChat: FirstChatCopy;
+  recall: RecallCopy;
 }
 
 export const copy: { ko: CopyShape; en: CopyShape } = {
@@ -67,6 +90,12 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       retry: '다시 시도',
       typing: '생각하는 중',
     },
+    recall: {
+      ghost: { title: '그날의 너', subtitle: 'Ghost Hint · 레벨 1' },
+      suggestion: { title: '관련 기억', subtitle: 'Suggestion · 레벨 2' },
+      strong: { title: '다시 떠오른 생각', subtitle: 'Strong Recall · 레벨 3' },
+      inspector: { title: '기억', subtitle: '당신이 남긴 흔적' },
+    },
   },
   en: {
     appName: 'Synapse',
@@ -87,6 +116,12 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       errorSub: 'Try again?',
       retry: 'Retry',
       typing: 'thinking',
+    },
+    recall: {
+      ghost: { title: 'From you, before', subtitle: 'ghost hint · level 1' },
+      suggestion: { title: 'Related memory', subtitle: 'suggestion · level 2' },
+      strong: { title: 'A returning thought', subtitle: 'strong recall · level 3' },
+      inspector: { title: 'Memory', subtitle: "Traces you've left" },
     },
   },
 };

@@ -13,7 +13,7 @@
 // design-system 자기 자신의 카피 진실원 매칭은 자기 패키지에서 검증하는 게 자연스럽고,
 // 상대 import (`../index.ts`) 로 self-import 회피.
 //
-// 검증 키 (Sprint 1 6 + Sprint 3 2 = 8):
+// 검증 키 (Sprint 1 6 + Sprint 3 2 + Sprint 4 5 = 13):
 //   Sprint 1:
 //     COPY.ko.onboard.hi    ↔ copy.ko.onboarding.hi       ("안녕하세요.")
 //     COPY.ko.onboard.sub   ↔ copy.ko.onboarding.sub      ("그냥 이야기해보세요...")
@@ -24,9 +24,17 @@
 //   Sprint 3 (T7 — CaptureToast i18n):
 //     COPY.ko.captured      ↔ copy.ko.firstChat.captured     ("방금 기억됨")
 //     COPY.ko.capturedSub   ↔ copy.ko.firstChat.capturedSub  ("이 생각은 당신의 그래프에 연결됐어요")
+//   Sprint 4 (T6 — Recall L1/L2/L3 + Inspector i18n):
+//     COPY.ko.ghostLabel      ↔ copy.ko.recall.ghost.title         ("그날의 너")
+//     COPY.ko.suggestionLabel ↔ copy.ko.recall.suggestion.title    ("관련 기억")
+//     COPY.ko.strongLabel     ↔ copy.ko.recall.strong.title        ("다시 떠오른 생각")
+//     COPY.ko.inspector       ↔ copy.ko.recall.inspector.title     ("기억")
+//     COPY.ko.inspectorSub    ↔ copy.ko.recall.inspector.subtitle  ("당신이 남긴 흔적")
 //
-// (T4 가 의도적으로 키 네임스페이스를 정리한 부분 — `onboard.*` → `onboarding.*`,
-//  flat `placeholder` / `captured` / `capturedSub` → `firstChat.*`. 카피 *값* 만 1:1 비교.)
+// (T4/T6 가 의도적으로 키 네임스페이스를 정리한 부분 — `onboard.*` → `onboarding.*`,
+//  flat `placeholder/captured/capturedSub` → `firstChat.*`,
+//  flat `ghostLabel/suggestionLabel/strongLabel/inspector/inspectorSub` → `recall.<surface>.{title,subtitle}`.
+//  카피 *값* 만 1:1 비교.)
 
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -59,6 +67,12 @@ const checks = [
   ['tagline', ko.tagline],
   ['captured', ko.firstChat.captured],
   ['capturedSub', ko.firstChat.capturedSub],
+  // Sprint 4 (T6) — Recall surfaces.
+  ['ghostLabel', ko.recall.ghost.title],
+  ['suggestionLabel', ko.recall.suggestion.title],
+  ['strongLabel', ko.recall.strong.title],
+  ['inspector', ko.recall.inspector.title],
+  ['inspectorSub', ko.recall.inspector.subtitle],
 ];
 
 let okCount = 0;

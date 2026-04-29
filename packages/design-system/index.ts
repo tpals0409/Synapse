@@ -5,7 +5,14 @@ export type { ColorHexTheme, ColorHexToken } from './src/colorsHex.ts';
 export { fonts, role } from './src/fonts.ts';
 export type { FontFamily, FontRole } from './src/fonts.ts';
 export { copy } from './src/copy.ts';
-export type { CopyLang, CopyShape, OnboardingCopy, FirstChatCopy } from './src/copy.ts';
+export type {
+  CopyLang,
+  CopyShape,
+  OnboardingCopy,
+  FirstChatCopy,
+  RecallCopy,
+  RecallSurfaceCopy,
+} from './src/copy.ts';
 export { spacing } from './src/spacing.ts';
 export type { SpacingToken } from './src/spacing.ts';
 export { radius } from './src/radius.ts';
