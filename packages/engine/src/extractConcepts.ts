@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Concept } from './types.ts';
+import type { Concept } from '@synapse/protocol';
 
 export type CompleteFn = (opts: {
   system: string;

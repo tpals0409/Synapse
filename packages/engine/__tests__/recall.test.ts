@@ -155,3 +155,90 @@ test('recallCandidates passes db through to nearest and traverse', async () => {
   assert.equal(nearestDb, fakeDb);
   assert.equal(traverseDb, fakeDb);
 });
+
+// ── Sprint 5: 합집합 갱신 (D-S5-recall-source-priority) ─────────────────────
+
+test('recallCandidates Sprint 5: 합집합 hyperTraverse 주입 시 bridge candidate 가 결과에 포함 (DI override)', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'seed', label: '씨앗', score: 0.9 },
+  ];
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    hyperTraverse: async () => [],
+    bridge: async (seedId) => [
+      {
+        conceptId: 'far',
+        label: '먼개념',
+        score: 0.4,
+        source: 'bridge',
+      },
+    ],
+    domainCrossing: async () => [],
+  });
+  assert.equal(out.length, 2);
+  const far = out.find((c) => c.conceptId === 'far');
+  assert.equal(far?.source, 'bridge');
+  assert.equal(far?.label, '먼개념');
+});
+
+test('recallCandidates Sprint 5: 합집합 source priority — mixed > semantic > co_occur > bridge > temporal > domain_crossing', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'sem', label: 'sem', score: 0.55 },
+  ];
+  const traverse: TraverseFn = async (_db, conceptId) => {
+    if (conceptId === 'sem') {
+      return [{ id: 'co', label: 'co', weight: 0.95 }];
+    }
+    return [];
+  };
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    traverse,
+    hyperTraverse: async () => [],
+    bridge: async () => [
+      { conceptId: 'br', label: 'br', score: 0.99, source: 'bridge' },
+    ],
+    domainCrossing: async () => [
+      { conceptId: 'dc', label: 'dc', score: 0.99, source: 'domain_crossing' },
+    ],
+    recentDecisions: [
+      { id: 'l1', decided_at: 1, act: 'ghost', candidate_ids: ['tm'] },
+    ],
+    temporal: async () => [
+      { conceptId: 'tm', label: 'tm', score: 0.99, source: 'temporal' },
+    ],
+  });
+  // sem hit → 'sem' 만 source semantic. co 는 traverse 로 co_occur. bridge / temporal / dc 는 hyperRecall.
+  // priority order: semantic 'sem' < co_occur 'co' < bridge 'br' < temporal 'tm' < domain_crossing 'dc'
+  // (mixed 는 conceptId 충돌 시 발생, 본 케이스는 모두 distinct).
+  const sources = out.map((c) => c.source);
+  assert.deepEqual(sources, ['semantic', 'co_occur', 'bridge', 'temporal', 'domain_crossing']);
+  assert.equal(out[0]?.conceptId, 'sem');
+  assert.equal(out[1]?.conceptId, 'co');
+  assert.equal(out[2]?.conceptId, 'br');
+  assert.equal(out[3]?.conceptId, 'tm');
+  assert.equal(out[4]?.conceptId, 'dc');
+});
+
+test('recallCandidates Sprint 5: 같은 conceptId 가 semantic + bridge 모두 hit → mixed 승격, score=max', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'shared', label: '공통', score: 0.6 },
+  ];
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    hyperTraverse: async () => [],
+    bridge: async () => [
+      { conceptId: 'shared', label: '공통', score: 0.85, source: 'bridge' },
+    ],
+    domainCrossing: async () => [],
+  });
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.source, 'mixed');
+  assert.equal(out[0]?.score, 0.85);
+});

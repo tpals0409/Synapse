@@ -7,9 +7,13 @@ import type {
   DecisionAct,
   RecallSource,
   SuppressedReason,
+  EdgeKind,
+  BridgeCandidate,
+  TemporalCandidate,
+  DomainCrossingCandidate,
 } from '../index.ts';
 
-test('protocol: RecallCandidate shape compiles with all 3 sources', () => {
+test('protocol: RecallCandidate shape compiles with all 6 sources (Sprint 5 enum extended)', () => {
   const semantic: RecallCandidate = {
     conceptId: 'c1',
     label: '산책',
@@ -28,9 +32,30 @@ test('protocol: RecallCandidate shape compiles with all 3 sources', () => {
     score: 0.91,
     source: 'mixed',
   };
+  const bridge: RecallCandidate = {
+    conceptId: 'c4',
+    label: '책',
+    score: 0.6,
+    source: 'bridge',
+  };
+  const temporal: RecallCandidate = {
+    conceptId: 'c5',
+    label: '저녁',
+    score: 0.55,
+    source: 'temporal',
+  };
+  const domainCrossing: RecallCandidate = {
+    conceptId: 'c6',
+    label: '음악',
+    score: 0.5,
+    source: 'domain_crossing',
+  };
   assert.equal(semantic.source, 'semantic');
   assert.equal(co.source, 'co_occur');
   assert.equal(mixed.source, 'mixed');
+  assert.equal(bridge.source, 'bridge');
+  assert.equal(temporal.source, 'temporal');
+  assert.equal(domainCrossing.source, 'domain_crossing');
 });
 
 test('protocol: DecisionAct union has exactly 4 members (frozen)', () => {
@@ -82,7 +107,93 @@ test('protocol: SuppressedReason union accepts cooldown / duplicate / low-confid
   assert.equal(reasons.length, 3);
 });
 
-test('protocol: RecallSource union accepts semantic / co_occur / mixed', () => {
-  const sources: RecallSource[] = ['semantic', 'co_occur', 'mixed'];
-  assert.equal(sources.length, 3);
+test('protocol: RecallSource union accepts 6 sources (Sprint 5 frozen enum)', () => {
+  const sources: RecallSource[] = [
+    'semantic',
+    'co_occur',
+    'mixed',
+    'bridge',
+    'temporal',
+    'domain_crossing',
+  ];
+  assert.equal(sources.length, 6);
+});
+
+test('protocol: EdgeKind union accepts co_occur / semantic (T1.5 holding ground for protocol Concept/GraphEdge migration)', () => {
+  const kinds: EdgeKind[] = ['co_occur', 'semantic'];
+  assert.equal(kinds.length, 2);
+});
+
+test('protocol: BridgeCandidate carries viaConceptId + depth + literal source bridge', () => {
+  const b: BridgeCandidate = {
+    conceptId: 'far',
+    label: '먼개념',
+    score: 0.45,
+    source: 'bridge',
+    viaConceptId: 'middle',
+    depth: 2,
+  };
+  assert.equal(b.source, 'bridge');
+  assert.equal(b.viaConceptId, 'middle');
+  assert.equal(b.depth, 2);
+});
+
+test('protocol: TemporalCandidate carries windowMs + coDecidedIds + literal source temporal', () => {
+  const t: TemporalCandidate = {
+    conceptId: 'c1',
+    label: '아침',
+    score: 0.5,
+    source: 'temporal',
+    windowMs: 24 * 60 * 60 * 1000,
+    coDecidedIds: ['c2', 'c3'],
+  };
+  assert.equal(t.source, 'temporal');
+  assert.equal(t.windowMs, 86_400_000);
+  assert.deepEqual(t.coDecidedIds, ['c2', 'c3']);
+});
+
+test('protocol: DomainCrossingCandidate carries edgeKindFrom + edgeKindTo + literal source domain_crossing', () => {
+  const d: DomainCrossingCandidate = {
+    conceptId: 'cross',
+    label: '횡단',
+    score: 0.6,
+    source: 'domain_crossing',
+    edgeKindFrom: 'co_occur',
+    edgeKindTo: 'semantic',
+  };
+  assert.equal(d.source, 'domain_crossing');
+  assert.equal(d.edgeKindFrom, 'co_occur');
+  assert.equal(d.edgeKindTo, 'semantic');
+});
+
+test('protocol: 3 specialized candidates are assignable to RecallCandidate (dedup primitive — same conceptId, source promotion at engine layer)', () => {
+  const b: BridgeCandidate = {
+    conceptId: 'shared',
+    label: 'L',
+    score: 0.4,
+    source: 'bridge',
+    viaConceptId: 'm',
+    depth: 2,
+  };
+  const t: TemporalCandidate = {
+    conceptId: 'shared',
+    label: 'L',
+    score: 0.5,
+    source: 'temporal',
+    windowMs: 1,
+    coDecidedIds: [],
+  };
+  const d: DomainCrossingCandidate = {
+    conceptId: 'shared',
+    label: 'L',
+    score: 0.6,
+    source: 'domain_crossing',
+    edgeKindFrom: 'co_occur',
+    edgeKindTo: 'semantic',
+  };
+  const widened: RecallCandidate[] = [b, t, d];
+  assert.equal(widened.length, 3);
+  assert.equal(widened.every((c) => c.conceptId === 'shared'), true);
+  const sources = new Set(widened.map((c) => c.source));
+  assert.equal(sources.size, 3);
 });

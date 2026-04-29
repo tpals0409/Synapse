@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { openDb, migrate, listMessages } from '@synapse/storage';
-import type { Concept, GraphEdge } from '@synapse/engine';
+import type { Concept, GraphEdge } from '@synapse/protocol';
 import {
   sendStream,
   runMemoryFormation,
@@ -85,7 +85,7 @@ test('runMemoryFormation: extract → embed*N → appendConcept*N → buildEdges
   const buildEdges: BuildEdgesFn = async (newConcept) => {
     calls.push(`buildEdges(${newConcept.id})`);
     if (newConcept.id === 'c0') {
-      return [{ from: 'c0', to: 'prev-1', weight: 1.0, kind: 'co_occur' }];
+      return [{ fromId: 'c0', toId: 'prev-1', weight: 1.0, kind: 'co_occur' }];
     }
     return [];
   };

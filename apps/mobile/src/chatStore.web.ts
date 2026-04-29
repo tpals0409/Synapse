@@ -15,9 +15,12 @@
 // 외부 시그니처 동결. 내부에서 데모용 RecallLogRow 를 recallStore.push 하여
 // Ghost/Suggestion/Strong 4 화면 시각 검증 (web bundle 에 storage/engine/orchestrator 의
 // native-only 파스 없이도 turn 마다 act 가 한 cycle 씩 회전).
+//
+// Sprint 5 [FROZEN v2026-04-29 D-S5-protocol-concept-edge-migration] —
+// Concept import 경로 protocol 단일화 (engine shim 우회). carry-over 7 잔여 해소.
+// demo source 도 6 종 cycle 로 InspectorList source-pill 시각 검증 (data 다양화만).
 
-import type { Message, RecallCandidate, RecallLogRow } from '@synapse/protocol';
-import type { Concept } from '@synapse/engine';
+import type { Concept, Message, RecallCandidate, RecallLogRow, RecallSource } from '@synapse/protocol';
 import * as conceptStore from './conceptStore';
 import * as recallStore from './recallStore';
 
@@ -33,6 +36,15 @@ const DEMO_CONCEPT_LABELS = ['멈춤', '일의 리듬', '정리하고 싶음'];
 
 // 4 화면 시각 검증을 위해 turn 마다 회전 (silence → ghost → suggestion → strong → silence …).
 const DEMO_ACT_CYCLE: RecallLogRow['act'][] = ['silence', 'ghost', 'suggestion', 'strong'];
+// Sprint 5 demo: turn 마다 source 도 회전하여 InspectorList source-pill 6 종 시각 노출.
+const DEMO_SOURCE_CYCLE: RecallSource[] = [
+  'semantic',
+  'co_occur',
+  'mixed',
+  'bridge',
+  'temporal',
+  'domain_crossing',
+];
 let demoTurn = 0;
 
 export async function* sendStream(text: string): AsyncIterable<string> {
@@ -67,12 +79,13 @@ export async function* sendStream(text: string): AsyncIterable<string> {
   conceptStore.notify(demoConcepts);
 
   const act = DEMO_ACT_CYCLE[demoTurn % DEMO_ACT_CYCLE.length] as RecallLogRow['act'];
+  const demoSource = DEMO_SOURCE_CYCLE[demoTurn % DEMO_SOURCE_CYCLE.length] as RecallSource;
   demoTurn += 1;
   const candidates: RecallCandidate[] = demoConcepts.map((concept) => ({
     conceptId: concept.id,
     label: concept.label,
     score: 0.7,
-    source: 'semantic',
+    source: demoSource,
   }));
   const row: RecallLogRow = {
     id: cryptoRandom(),

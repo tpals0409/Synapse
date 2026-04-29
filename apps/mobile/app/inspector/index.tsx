@@ -1,6 +1,11 @@
 // Memory Inspector screen — 디자인 목업 InspectorScreen 1:1.
-// recallStore.getRecent(전체) → InspectorRow[] 변환 → <InspectorList rows={...} /> 메모리 피드.
+// recallStore.getRecentDetailed(전체) → InspectorRow[] 변환 → <InspectorList rows={...} /> 메모리 피드.
 // 헤더 (제목 + 부제 + 통계) 는 본 화면이 직접 렌더 (designer 의 InspectorList 는 list 단독).
+//
+// Sprint 5 [FROZEN v2026-04-29 D-S5-recallStore-detailed-getter] —
+// `getRecent` (RecallLogRow[]) → `getRecentDetailed` ({row, candidates}[]) 로 전환.
+// row-별 top candidate 의 label / source 를 join 하여 InspectorRow 에 채움.
+// [FROZEN v2026-04-29 D-S5-InspectorList-source-field] source-pill 5+ 종 시각 활성.
 
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -9,34 +14,39 @@ import {
   InspectorList,
   type InspectorRow,
 } from '@synapse/design-system/components';
-import type { RecallLogRow } from '@synapse/protocol';
 import * as recallStore from '../../src/recallStore';
+import type { RecallLogDetail } from '../../src/recallStore';
 
 const c = copy.ko;
 
 const RECENT_WINDOW_MS = Number.POSITIVE_INFINITY; // 본 sprint: 전체 세션 표시.
 
-function rowsFromLog(logs: RecallLogRow[]): InspectorRow[] {
-  return logs
-    .filter((r) => r.act !== 'silence')
-    .map((r) => ({
-      id: r.id,
-      // 라벨 join: Concept lookup 은 Sprint 5+ 의 graph 페어. 본 sprint 는 candidate_ids[0] 를
-      // 그대로 사용하거나, 비었으면 act 명을 라벨로 (디스플레이 안전 디폴트).
-      label: r.candidate_ids[0] ?? r.act,
-      decided_at: r.decided_at,
-      act: r.act,
-    }));
+function rowsFromDetail(details: RecallLogDetail[]): InspectorRow[] {
+  return details
+    .filter(({ row }) => row.act !== 'silence')
+    .map(({ row, candidates }) => {
+      const top = candidates[0];
+      return {
+        id: row.id,
+        // 라벨 join: top candidate.label 우선 (Sprint 5 의 protocol Concept 단일 출처 + storage label
+        // 노출 D-S5-storage-label-expose-A), 비었으면 candidate_ids[0] (cold start 후 in-memory miss),
+        // 그것도 비었으면 act 명을 라벨로 (디스플레이 안전 디폴트).
+        label: top?.label ?? row.candidate_ids[0] ?? row.act,
+        decided_at: row.decided_at,
+        act: row.act,
+        source: top?.source,
+      };
+    });
 }
 
 export default function InspectorScreen() {
   const [rows, setRows] = useState<InspectorRow[]>(() =>
-    rowsFromLog(recallStore.getRecent(RECENT_WINDOW_MS)),
+    rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS)),
   );
 
   useEffect(() => {
     return recallStore.subscribe(() => {
-      setRows(rowsFromLog(recallStore.getRecent(RECENT_WINDOW_MS)));
+      setRows(rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS)));
     });
   }, []);
 

@@ -23,4 +23,5 @@ export type {
   InspectorListProps,
   InspectorRow,
   InspectorAct,
+  InspectorSource,
 } from './InspectorList.tsx';

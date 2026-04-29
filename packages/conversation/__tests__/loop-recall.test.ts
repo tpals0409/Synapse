@@ -5,6 +5,7 @@ import { sendStream, type RecallFn, type DecideFn, type RecallStore } from '../i
 import type {
   RecallCandidate,
   RecallLogRow,
+  RecallSource,
   DecisionAct,
   DecideContext,
 } from '@synapse/protocol';
@@ -391,4 +392,150 @@ test('Recall hook: DecisionAct 4 원 모두 store 기록 가능 (drift 가드)',
   assert.ok(seen.has('suggestion'));
   assert.ok(seen.has('strong'));
   assert.ok(seen.has('silence'));
+});
+
+// ---------- Sprint 5: 3 신규 source (bridge / temporal / domain_crossing) hook 통과 ----------
+
+// engine.recallCandidates 가 hyperRecall 3 source 합집합을 RecallCandidate[] 로 좁혀 반환
+// (D-S5-T3). conversation hook 은 source-agnostic — 신규 source 도 store push 까지 정상 흐름.
+// 본 테스트는 *conversation 측 hook 시그니처 / 호출 위치 변경 0* 을 검증한다.
+test('Recall hook (S5): bridge / temporal / domain_crossing source 가 RecallCandidate 통과해 store push', async () => {
+  const db = openDb(':memory:');
+  migrate(db);
+
+  const store = makeStore();
+  const seen: DecideContext[] = [];
+
+  const candidates: RecallCandidate[] = [
+    { conceptId: 'b1', label: 'bridge-c', score: 0.62, source: 'bridge' },
+    { conceptId: 't1', label: 'temporal-c', score: 0.55, source: 'temporal' },
+    { conceptId: 'x1', label: 'cross-c', score: 0.71, source: 'domain_crossing' },
+  ];
+  const recall: RecallFn = async () => candidates;
+  const decide: DecideFn = (ctx) => {
+    seen.push(ctx);
+    return 'suggestion';
+  };
+
+  await drain(
+    sendStream('hi', {
+      db,
+      completeStream: () => chunks(['ok']),
+      extractConcepts: async () => [],
+      recall,
+      decide,
+      recallStore: store,
+    }),
+  );
+  await settle();
+
+  // decide 가 신규 source 를 그대로 candidates 로 받았는가
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0]!.candidates.length, 3);
+  const sourcesIn = seen[0]!.candidates.map((c) => c.source).sort();
+  assert.deepEqual(sourcesIn, ['bridge', 'domain_crossing', 'temporal']);
+
+  // store push 시 candidate_ids 보존 (순서까지 — hook 은 map 만 함)
+  assert.equal(store.rows.length, 1);
+  assert.equal(store.rows[0]!.act, 'suggestion');
+  assert.deepEqual(store.rows[0]!.candidate_ids, ['b1', 't1', 'x1']);
+  assert.equal(store.rows[0]!.suppressed_reason, undefined);
+});
+
+// 임계 회복 (Sprint 5 receipt): recall_candidates ≥ 3 + bridge ≥ 1 + temporal ≥ 1 동시 존재.
+// orchestrator T4 의 source 가중치 약화 (D-S5-T4) 와 무관하게 conversation hook 자체는
+// max(score) 기준 silence 후처리만 수행 — 본 테스트는 *분배 통과* 만 검증.
+test('Recall hook (S5): bridge ≥ 1 + temporal ≥ 1 + recall_candidates ≥ 3 동시 통과 (receipt 임계 회복)', async () => {
+  const db = openDb(':memory:');
+  migrate(db);
+
+  const store = makeStore();
+  const recall: RecallFn = async () => [
+    { conceptId: 'b1', label: 'b1', score: 0.6, source: 'bridge' },
+    { conceptId: 't1', label: 't1', score: 0.65, source: 'temporal' },
+    { conceptId: 's1', label: 's1', score: 0.7, source: 'semantic' },
+  ];
+  const decide: DecideFn = () => 'ghost';
+
+  await drain(
+    sendStream('hi', {
+      db,
+      completeStream: () => chunks(['ok']),
+      extractConcepts: async () => [],
+      recall,
+      decide,
+      recallStore: store,
+    }),
+  );
+  await settle();
+
+  assert.equal(store.rows.length, 1);
+  const row = store.rows[0]!;
+  assert.equal(row.act, 'ghost');
+  assert.ok(row.candidate_ids.length >= 3, 'recall_candidates ≥ 3');
+  // Sprint 5 fixture 임계 — bridge / temporal 각각 ≥ 1 통과 (id 별로 confirm)
+  assert.ok(row.candidate_ids.includes('b1'), 'bridge ≥ 1');
+  assert.ok(row.candidate_ids.includes('t1'), 'temporal ≥ 1');
+});
+
+// RecallSource 6 enum drift 가드 — 새 source 가 추가되면 본 테스트의 exhaustive switch
+// 가 컴파일 시 깨져 즉시 알림 (Decision-version 태그 D-S5-T1-protocol-source-enum 보호).
+test('Recall hook (S5): RecallSource 6 enum drift 가드 (모두 hook 통과)', async () => {
+  const sources: RecallSource[] = [
+    'semantic',
+    'co_occur',
+    'mixed',
+    'bridge',
+    'temporal',
+    'domain_crossing',
+  ];
+
+  // exhaustive switch — enum 이 추가/제거되면 default 가 never 분기를 깨뜨려 빌드 실패.
+  for (const s of sources) {
+    const _check: void = ((src: RecallSource): void => {
+      switch (src) {
+        case 'semantic':
+        case 'co_occur':
+        case 'mixed':
+        case 'bridge':
+        case 'temporal':
+        case 'domain_crossing':
+          return;
+        default: {
+          const _exhaust: never = src;
+          return _exhaust;
+        }
+      }
+    })(s);
+    void _check;
+  }
+
+  // 6 source 각각 하나씩 candidate 로 만들어 hook 흐름 통과하는지 확인.
+  const db = openDb(':memory:');
+  migrate(db);
+  const store = makeStore();
+  const recall: RecallFn = async () =>
+    sources.map((src, i): RecallCandidate => ({
+      conceptId: `c${i}`,
+      label: src,
+      score: 0.5 + i * 0.01,
+      source: src,
+    }));
+  const decide: DecideFn = () => 'suggestion';
+
+  await drain(
+    sendStream('hi', {
+      db,
+      completeStream: () => chunks(['ok']),
+      extractConcepts: async () => [],
+      recall,
+      decide,
+      recallStore: store,
+    }),
+  );
+  await settle();
+
+  assert.equal(store.rows.length, 1);
+  assert.equal(store.rows[0]!.act, 'suggestion');
+  assert.equal(store.rows[0]!.candidate_ids.length, 6);
 });

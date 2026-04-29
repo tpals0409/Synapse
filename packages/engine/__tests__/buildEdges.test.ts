@@ -25,13 +25,22 @@ test('buildEdges produces co_occur edges from prevMessageConceptIds (1:1)', asyn
   const coOccur = edges.filter((e) => e.kind === 'co_occur');
   assert.equal(coOccur.length, 2);
   assert.deepEqual(
-    coOccur.map((e) => e.to).sort(),
+    coOccur.map((e) => e.toId).sort(),
     ['p1', 'p2'],
   );
   for (const e of coOccur) {
-    assert.equal(e.from, 'new');
+    assert.equal(e.fromId, 'new');
     assert.equal(e.weight, 1.0);
   }
+});
+
+test('buildEdges semantic edges produce {fromId, toId} (T1.5 protocol field naming)', async () => {
+  const nearest: NearestFn = async () => [{ id: 'x', score: 0.95 }];
+  const edges = await buildEdges(newConcept, { nearest });
+  const semantic = edges.filter((e) => e.kind === 'semantic');
+  assert.equal(semantic.length, 1);
+  assert.equal(semantic[0]?.fromId, 'new');
+  assert.equal(semantic[0]?.toId, 'x');
 });
 
 test('buildEdges semantic edges only for score ≥ threshold(default 0.7)', async () => {
@@ -46,12 +55,12 @@ test('buildEdges semantic edges only for score ≥ threshold(default 0.7)', asyn
   const semantic = edges.filter((e) => e.kind === 'semantic');
   assert.equal(semantic.length, 2);
   assert.deepEqual(
-    semantic.map((e) => e.to).sort(),
+    semantic.map((e) => e.toId).sort(),
     ['a', 'b'],
   );
-  const aEdge = semantic.find((e) => e.to === 'a');
+  const aEdge = semantic.find((e) => e.toId === 'a');
   assert.equal(aEdge?.weight, 0.91);
-  assert.equal(aEdge?.from, 'new');
+  assert.equal(aEdge?.fromId, 'new');
 });
 
 test('buildEdges respects custom threshold', async () => {
@@ -62,7 +71,7 @@ test('buildEdges respects custom threshold', async () => {
   const edges = await buildEdges(newConcept, { nearest, threshold: 0.5 });
   const semantic = edges.filter((e) => e.kind === 'semantic');
   assert.equal(semantic.length, 1);
-  assert.equal(semantic[0]?.to, 'a');
+  assert.equal(semantic[0]?.toId, 'a');
 });
 
 test('buildEdges combines co_occur + semantic in one call', async () => {
@@ -84,7 +93,7 @@ test('buildEdges excludes self id from co_occur', async () => {
   });
   const coOccur = edges.filter((e) => e.kind === 'co_occur');
   assert.equal(coOccur.length, 1);
-  assert.equal(coOccur[0]?.to, 'p1');
+  assert.equal(coOccur[0]?.toId, 'p1');
 });
 
 test('buildEdges excludes self id from nearest hits', async () => {
@@ -95,7 +104,7 @@ test('buildEdges excludes self id from nearest hits', async () => {
   const edges = await buildEdges(newConcept, { nearest });
   const semantic = edges.filter((e) => e.kind === 'semantic');
   assert.equal(semantic.length, 1);
-  assert.equal(semantic[0]?.to, 'a');
+  assert.equal(semantic[0]?.toId, 'a');
 });
 
 test('buildEdges passes excludeId + topK to nearest', async () => {

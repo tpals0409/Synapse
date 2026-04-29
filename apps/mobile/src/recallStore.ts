@@ -6,10 +6,16 @@
 // - native = @synapse/storage 의 appendRecallLog 로 영속 + recentlyDecidedFor 로 cooldown.
 //   추가로 본 세션의 push 이력을 in-memory 로도 보관 → getRecent / Inspector 피드 즉응.
 // - 본 어댑터는 metro 의 platform extension(.web.ts 우선) 분기를 위한 *짝* 으로 존재
-//   (carry-over 5: web bundle 에 better-sqlite3/sqlite-vec 0 hits).
+//   (carry-over 5: web bundle 에 better-sqlite3/sqlite-vec 0 hits — 세 번째 시범).
 //
 // shape: protocol 의 RecallLogRow 그대로 (snake_case: decided_at / candidate_ids).
 // storage 도 T1 (#38) 후 protocol shape 채택 — 별도 매핑 불필요.
+//
+// Sprint 5 [FROZEN v2026-04-29 D-S5-recallStore-detailed-getter] — 신규 export
+// `getRecentDetailed(withinMs, now?): {row, candidates}[]` 추기. Inspector 의 row-별
+// source-pill 시각 분기 (D-S5-InspectorList-source-field) 를 위해 candidates 짝 노출.
+// push/getRecent/getLast/subscribe/recentlyDecided 시그니처 동결 100%.
+// candidates 는 in-memory 만 유지 (cold start = row.candidate_ids 만 — Sprint 6+ retention).
 
 import {
   appendRecallLog,
@@ -22,8 +28,14 @@ import type { RecallCandidate, RecallLogRow } from '@synapse/protocol';
 
 type Listener = (row: RecallLogRow) => void;
 
+export type RecallLogDetail = {
+  row: RecallLogRow;
+  candidates: RecallCandidate[];
+};
+
 const listeners = new Set<Listener>();
 const sessionRows: RecallLogRow[] = [];
+const sessionCandidatesById = new Map<string, RecallCandidate[]>();
 let lastDecision: { act: RecallLogRow['act']; candidates: RecallCandidate[] } | null = null;
 
 let dbHandle: Database | null = null;
@@ -42,6 +54,7 @@ export function push(
 ): void {
   appendRecallLog(ensureDb(), row);
   sessionRows.push(row);
+  sessionCandidatesById.set(row.id, candidates);
   lastDecision = { act: row.act, candidates };
   for (const l of listeners) l(row);
 }
@@ -50,6 +63,16 @@ export function getRecent(withinMs: number, now: number = Date.now()): RecallLog
   if (!Number.isFinite(withinMs)) return sessionRows.slice();
   const cutoff = now - withinMs;
   return sessionRows.filter((r) => r.decided_at >= cutoff);
+}
+
+export function getRecentDetailed(
+  withinMs: number,
+  now: number = Date.now(),
+): RecallLogDetail[] {
+  return getRecent(withinMs, now).map((row) => ({
+    row,
+    candidates: sessionCandidatesById.get(row.id) ?? [],
+  }));
 }
 
 export function subscribe(listener: Listener): () => void {

@@ -1,4 +1,4 @@
-import type { Concept } from './types.ts';
+import type { Concept } from '@synapse/protocol';
 
 export const EMBED_DIM = 768;
 

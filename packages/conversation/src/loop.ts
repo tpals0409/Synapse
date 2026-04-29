@@ -4,6 +4,8 @@ import type {
   RecallLogRow,
   DecideContext,
   DecisionAct,
+  Concept,
+  GraphEdge,
 } from '@synapse/protocol';
 import {
   appendMessage,
@@ -19,8 +21,6 @@ import {
   buildEdges as defaultBuildEdges,
   recallCandidates as defaultRecallCandidates,
   DEFAULT_SEMANTIC_THRESHOLD,
-  type Concept,
-  type GraphEdge,
   type NearestFn as EngineNearestFn,
   type NearestRecallFn,
   type TraverseFn,
@@ -182,8 +182,9 @@ export async function* sendStream(
 
   // Sprint 4 Recall hook — user append 직후 + assistant 첫 chunk 도달 *전*.
   // fire-and-forget; recall/decide 실패는 user reply 흐름과 격리 (silent fallback).
-  // Sprint 5 hook 주석: Bridge / Temporal / Domain Crossing 추가 진입점은 본 hook 내부의
-  // recall() 어댑터를 확장 (recallCandidates → bridgeCandidates ∪ temporalCandidates ∪ ...).
+  // Sprint 5 활성화 (D-S5-T5-conversation-hook-activation): Bridge / Temporal / Domain
+  // Crossing 3 신규 source 는 engine.recallCandidates 가 합집합으로 자동 반환 (D-S5-T3).
+  // hook 시그니처 / 호출 위치 변경 0 — RecallCandidate.source enum 확장만으로 흐름 통과.
   void runRecallHook(text, ts0, deps).catch((err) => {
     logger.warn('synapse/conversation: recall hook failed', err);
   });
@@ -220,6 +221,9 @@ async function runRecallHook(
   const store = deps.recallStore;
   if (store === undefined) return;
 
+  // Sprint 5 활성화: defaultRecallCandidates 가 hyperRecall 3 source (bridge / temporal /
+  // domain_crossing) 합집합을 RecallCandidate[] 로 좁혀 반환. 본 hook 은 source-agnostic —
+  // candidates.map(c => c.conceptId) 로 그대로 store 에 흘려보낸다 (추가 hook 박지 않음).
   const recall: RecallFn = deps.recall ?? defaultRecallCandidates;
   const decideFn: DecideFn = deps.decide ?? defaultDecide;
   const windowMs = deps.recentWindowMs ?? DEFAULT_RECENT_WINDOW_MS;

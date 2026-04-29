@@ -1,5 +1,15 @@
-import type { RecallCandidate } from '@synapse/protocol';
+import type {
+  RecallCandidate,
+  RecallLogRow,
+  RecallSource,
+} from '@synapse/protocol';
 import { EMBED_DIM, type EmbedFn } from './embed.ts';
+import {
+  bridgeCandidates as defaultBridgeCandidates,
+  temporalCandidates as defaultTemporalCandidates,
+  domainCrossingCandidates as defaultDomainCrossingCandidates,
+  type HyperTraverseFn,
+} from './hyperRecall.ts';
 
 export type NearestRecallHit = { id: string; label: string; score: number };
 
@@ -17,13 +27,40 @@ export type TraverseFn = (
   depth: number,
 ) => Promise<TraverseHit[]>;
 
+/** Sprint 5 합집합 hooks — 각 신규 source 의 candidate 생성 함수. 미주입 시 hyperRecall 직접. */
+export type BridgeFn = (
+  seedConceptId: string,
+  opts: { db: unknown; traverse: HyperTraverseFn; depth?: number; maxBridges?: number },
+) => Promise<RecallCandidate[]>;
+
+export type TemporalFn = (opts: {
+  db: unknown;
+  recentDecisions: RecallLogRow[];
+  windowMs?: number;
+}) => Promise<RecallCandidate[]>;
+
+export type DomainCrossingFn = (
+  seedConceptId: string,
+  opts: { db: unknown; traverse: HyperTraverseFn; kindWeight?: { co_occur: number; semantic: number } },
+) => Promise<RecallCandidate[]>;
+
 export type RecallCandidatesOptions = {
   db: unknown;
   embed?: EmbedFn;
   nearest?: NearestRecallFn;
   traverse?: TraverseFn;
+  /** Sprint 5 — kind 정보 포함한 traverse. 미주입 시 bridge/domain_crossing 비활성. */
+  hyperTraverse?: HyperTraverseFn;
+  /** Sprint 5 — 최근 결정 로그. 미주입 시 temporal 비활성. */
+  recentDecisions?: RecallLogRow[];
   semanticThreshold?: number;
   k?: number;
+  /** DI: bridge generator override. 기본 = hyperRecall.bridgeCandidates. */
+  bridge?: BridgeFn;
+  /** DI: temporal generator override. 기본 = hyperRecall.temporalCandidates. */
+  temporal?: TemporalFn;
+  /** DI: domain crossing generator override. 기본 = hyperRecall.domainCrossingCandidates. */
+  domainCrossing?: DomainCrossingFn;
 };
 
 export const DEFAULT_RECALL_SEMANTIC_THRESHOLD = 0.5;
@@ -47,6 +84,35 @@ const defaultEmbed: EmbedFn = async (text) => {
   }
   return Float32Array.from(data.embedding);
 };
+
+// FROZEN D-S5-recall-source-priority — primary sort by source enum order, secondary by score desc.
+// dedup conceptId — 같은 id 의 두 source hit 시 source='mixed' + score=max (Sprint 4 패턴).
+const SOURCE_PRIORITY: Record<RecallSource, number> = {
+  mixed: 0,
+  semantic: 1,
+  co_occur: 2,
+  bridge: 3,
+  temporal: 4,
+  domain_crossing: 5,
+};
+
+function mergeCandidate(
+  merged: Map<string, RecallCandidate>,
+  c: RecallCandidate,
+): void {
+  const existing = merged.get(c.conceptId);
+  if (existing === undefined) {
+    merged.set(c.conceptId, c);
+    return;
+  }
+  // 두 source 모두 hit — mixed 로 승격 + score=max + label 우선 기존 보존.
+  merged.set(c.conceptId, {
+    conceptId: c.conceptId,
+    label: existing.label,
+    score: Math.max(existing.score, c.score),
+    source: 'mixed',
+  });
+}
 
 export async function recallCandidates(
   userMessage: string,
@@ -108,5 +174,58 @@ export async function recallCandidates(
     }
   }
 
-  return Array.from(merged.values()).sort((a, b) => b.score - a.score);
+  // Sprint 5 — Hyper-Recall 합집합. seed = semantic-hit conceptIds (이미 merged 의 keys 중 'semantic'/'mixed').
+  if (opts.hyperTraverse) {
+    const seeds = Array.from(merged.entries())
+      .filter(([, c]) => c.source === 'semantic' || c.source === 'mixed')
+      .map(([id]) => id);
+
+    const bridgeFn: BridgeFn =
+      opts.bridge ??
+      (async (seedId, o) => {
+        const cs = await defaultBridgeCandidates(seedId, o);
+        return cs as RecallCandidate[];
+      });
+    const domainCrossingFn: DomainCrossingFn =
+      opts.domainCrossing ??
+      (async (seedId, o) => {
+        const cs = await defaultDomainCrossingCandidates(seedId, o);
+        return cs as RecallCandidate[];
+      });
+
+    for (const seedId of seeds) {
+      const bridges = await bridgeFn(seedId, {
+        db: opts.db,
+        traverse: opts.hyperTraverse,
+      });
+      for (const b of bridges) mergeCandidate(merged, b);
+
+      const crossings = await domainCrossingFn(seedId, {
+        db: opts.db,
+        traverse: opts.hyperTraverse,
+      });
+      for (const d of crossings) mergeCandidate(merged, d);
+    }
+  }
+
+  if (opts.recentDecisions !== undefined && opts.recentDecisions.length > 0) {
+    const temporalFn: TemporalFn =
+      opts.temporal ??
+      (async (o) => {
+        const cs = await defaultTemporalCandidates(o);
+        return cs as RecallCandidate[];
+      });
+    const temporals = await temporalFn({
+      db: opts.db,
+      recentDecisions: opts.recentDecisions,
+    });
+    for (const t of temporals) mergeCandidate(merged, t);
+  }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    const pa = SOURCE_PRIORITY[a.source];
+    const pb = SOURCE_PRIORITY[b.source];
+    if (pa !== pb) return pa - pb;
+    return b.score - a.score;
+  });
 }

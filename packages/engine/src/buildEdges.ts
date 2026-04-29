@@ -1,4 +1,4 @@
-import type { Concept, GraphEdge } from './types.ts';
+import type { Concept, GraphEdge } from '@synapse/protocol';
 import type { EmbeddedConcept } from './embed.ts';
 
 export type NearestHit = { id: string; score: number };
@@ -33,7 +33,7 @@ export async function buildEdges(
   const prev = opts.prevMessageConceptIds ?? [];
   for (const prevId of prev) {
     if (prevId === newConcept.id) continue;
-    edges.push({ from: newConcept.id, to: prevId, weight: 1.0, kind: 'co_occur' });
+    edges.push({ fromId: newConcept.id, toId: prevId, weight: 1.0, kind: 'co_occur' });
   }
 
   if (opts.nearest && isEmbedded(newConcept)) {
@@ -45,7 +45,7 @@ export async function buildEdges(
     for (const hit of hits) {
       if (hit.id === newConcept.id) continue;
       if (hit.score >= threshold) {
-        edges.push({ from: newConcept.id, to: hit.id, weight: hit.score, kind: 'semantic' });
+        edges.push({ fromId: newConcept.id, toId: hit.id, weight: hit.score, kind: 'semantic' });
       }
     }
   }

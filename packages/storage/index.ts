@@ -5,5 +5,6 @@ export { appendConcept, appendEdge, traverse } from './src/repo/graph.ts';
 export { nearestConcepts } from './src/repo/embed.ts';
 export { appendRecallLog, recentlyDecidedFor } from './src/repo/recall.ts';
 export type { NearestConcept } from './src/repo/embed.ts';
-export type { TraverseHit, EdgeKind } from './src/repo/graph.ts';
+export type { TraverseHit } from './src/repo/graph.ts';
+export type { EdgeKind } from '@synapse/protocol';
 export type { Database } from './src/db.ts';

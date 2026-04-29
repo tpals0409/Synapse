@@ -123,9 +123,9 @@ test('appendEdge inserts; INSERT OR IGNORE on duplicate (from,to,kind)', () => {
     appendConcept(db, { id: 'c1', label: 'a', createdAt: 1 });
     appendConcept(db, { id: 'c2', label: 'b', createdAt: 2 });
 
-    appendEdge(db, { from: 'c1', to: 'c2', weight: 0.5, kind: 'co_occur' });
-    appendEdge(db, { from: 'c1', to: 'c2', weight: 0.9, kind: 'co_occur' });
-    appendEdge(db, { from: 'c1', to: 'c2', weight: 0.7, kind: 'semantic' });
+    appendEdge(db, { fromId: 'c1', toId: 'c2', weight: 0.5, kind: 'co_occur' });
+    appendEdge(db, { fromId: 'c1', toId: 'c2', weight: 0.9, kind: 'co_occur' });
+    appendEdge(db, { fromId: 'c1', toId: 'c2', weight: 0.7, kind: 'semantic' });
 
     const rows = db.prepare('SELECT from_id, to_id, weight, kind FROM edges ORDER BY kind ASC').all() as {
       from_id: string;
@@ -155,6 +155,8 @@ test('nearestConcepts returns top-k by descending score; query vector ranks self
 
     assert.equal(top.length, 3);
     assert.equal(top[0]?.id, 'c1', 'self ranks first');
+    // [D-S5-storage-label-expose] label 직접 노출 — id != label.
+    assert.equal(top[0]?.label, 'one', 'concepts.label 흡수 (id != label)');
     // monotonically non-increasing score.
     for (let i = 1; i < top.length; i++) {
       assert.ok(
