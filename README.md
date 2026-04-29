@@ -114,8 +114,7 @@ Synapse/
 ├── e2e/scenarios/                # 종단 테스트
 ├── 디자인 목업/                  # 시각/카피 단일 진실원 (read-only)
 ├── 기획서.md                     # 제품 정의 단일 진실원
-├── SPRINTS.md                    # 스프린트 인덱스
-└── CLAUDE.md                     # 기술 결정 + 디자인 톤 + 로드맵
+└── SPRINTS.md                    # 스프린트 인덱스
 ```
 
 ---
