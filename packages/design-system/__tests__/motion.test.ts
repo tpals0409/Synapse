@@ -30,3 +30,22 @@ test('motion: NO css string export (RN compatibility)', () => {
   assert.equal(typeof motion.inkRise.duration, 'number');
   assert.notEqual(typeof motion.inkRise.duration, 'string');
 });
+
+// Sprint 3 — ghostBreathe (CaptureToast out-fade).
+test('motion.ghostBreathe exists', () => {
+  assert.ok(motion.ghostBreathe);
+});
+
+test('motion.ghostBreathe.duration is 600ms (CaptureToast out-fade)', () => {
+  assert.equal(typeof motion.ghostBreathe.duration, 'number');
+  assert.equal(motion.ghostBreathe.duration, 600);
+});
+
+test('motion.ghostBreathe.easing is "ease-in-out" (mockup ghost-breathe)', () => {
+  assert.equal(motion.ghostBreathe.easing, 'ease-in-out');
+});
+
+test('motion.ghostBreathe.from/to is 1 → 0 (out-fade single direction)', () => {
+  assert.equal(motion.ghostBreathe.from.opacity, 1);
+  assert.equal(motion.ghostBreathe.to.opacity, 0);
+});

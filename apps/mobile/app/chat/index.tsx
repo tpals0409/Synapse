@@ -19,8 +19,11 @@ import {
   role,
   spacing,
 } from '@synapse/design-system';
+import { CaptureToast } from '@synapse/design-system/components';
 import type { Message } from '@synapse/protocol';
+import type { Concept } from '@synapse/engine';
 import { listMessages, sendStream } from '../../src/chatStore';
+import { subscribe as subscribeConcepts } from '../../src/conceptStore';
 
 const c = copy.ko;
 
@@ -31,6 +34,7 @@ export default function FirstChat() {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
+  const [capturedConcepts, setCapturedConcepts] = useState<Concept[] | null>(null);
   const listRef = useRef<FlatList<DraftMessage> | null>(null);
 
   useEffect(() => {
@@ -38,6 +42,14 @@ export default function FirstChat() {
       requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    return subscribeConcepts((concepts) => {
+      // Sprint 3 dev doc §4: ≤3 concept per turn (engine.extractConcepts 가 이미 절단).
+      // 방어적으로 한번 더 절단 — 목업 FirstChatScreen 의 CaptureToast 흐름 1:1.
+      setCapturedConcepts(concepts.slice(0, 3));
+    });
+  }, []);
 
   const onSubmit = useCallback(async () => {
     const text = draft.trim();
@@ -95,6 +107,15 @@ export default function FirstChat() {
             renderItem={renderRow}
             contentContainerStyle={{ paddingVertical: spacing.sm }}
             keyboardShouldPersistTaps="handled"
+            ListFooterComponent={
+              capturedConcepts && capturedConcepts.length > 0 ? (
+                <CaptureToast
+                  key={capturedConcepts.map((c) => c.id).join('|')}
+                  concepts={capturedConcepts}
+                  onDismiss={() => setCapturedConcepts(null)}
+                />
+              ) : null
+            }
           />
         )}
         {error && <ErrorBanner message={error} />}

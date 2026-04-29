@@ -18,6 +18,7 @@
     "sqlite-vec": "^0.1.6"
   },
   "devDependencies": {
+    "@synapse/engine": "workspace:*",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.7.5",
     "typescript": "^5.6.3"

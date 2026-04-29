@@ -13,16 +13,20 @@
 // design-system 자기 자신의 카피 진실원 매칭은 자기 패키지에서 검증하는 게 자연스럽고,
 // 상대 import (`../index.ts`) 로 self-import 회피.
 //
-// 검증 키 (Sprint 1 화면 범위, T4 결정):
-//   COPY.ko.onboard.hi    ↔ copy.ko.onboarding.hi       ("안녕하세요.")
-//   COPY.ko.onboard.sub   ↔ copy.ko.onboarding.sub      ("그냥 이야기해보세요...")
-//   COPY.ko.onboard.cta   ↔ copy.ko.onboarding.cta      ("시작하기")
-//   COPY.ko.onboard.hint  ↔ copy.ko.onboarding.hint     ("기억은 자동으로 만들어집니다")
-//   COPY.ko.placeholder   ↔ copy.ko.firstChat.placeholder
-//   COPY.ko.tagline       ↔ copy.ko.tagline
+// 검증 키 (Sprint 1 6 + Sprint 3 2 = 8):
+//   Sprint 1:
+//     COPY.ko.onboard.hi    ↔ copy.ko.onboarding.hi       ("안녕하세요.")
+//     COPY.ko.onboard.sub   ↔ copy.ko.onboarding.sub      ("그냥 이야기해보세요...")
+//     COPY.ko.onboard.cta   ↔ copy.ko.onboarding.cta      ("시작하기")
+//     COPY.ko.onboard.hint  ↔ copy.ko.onboarding.hint     ("기억은 자동으로 만들어집니다")
+//     COPY.ko.placeholder   ↔ copy.ko.firstChat.placeholder
+//     COPY.ko.tagline       ↔ copy.ko.tagline
+//   Sprint 3 (T7 — CaptureToast i18n):
+//     COPY.ko.captured      ↔ copy.ko.firstChat.captured     ("방금 기억됨")
+//     COPY.ko.capturedSub   ↔ copy.ko.firstChat.capturedSub  ("이 생각은 당신의 그래프에 연결됐어요")
 //
 // (T4 가 의도적으로 키 네임스페이스를 정리한 부분 — `onboard.*` → `onboarding.*`,
-//  flat `placeholder` → `firstChat.placeholder`. 카피 *값* 만 1:1 비교.)
+//  flat `placeholder` / `captured` / `capturedSub` → `firstChat.*`. 카피 *값* 만 1:1 비교.)
 
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -53,6 +57,8 @@ const checks = [
   ['onboard.hint', ko.onboarding.hint],
   ['placeholder', ko.firstChat.placeholder],
   ['tagline', ko.tagline],
+  ['captured', ko.firstChat.captured],
+  ['capturedSub', ko.firstChat.capturedSub],
 ];
 
 let okCount = 0;

@@ -1,8 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildEdges,
-  extractConcepts,
   recall,
   type Concept,
   type GraphEdge,
@@ -41,20 +39,6 @@ test('RecallCandidate enumerates reason semantic|bridge|temporal|domain_crossing
   ];
   assert.equal(cands.length, 4);
   assert.equal(cands[3]?.sourceMessageId, 'm1');
-});
-
-test('extractConcepts is a stub that rejects in sprint 0', async () => {
-  await assert.rejects(
-    () => extractConcepts('hello'),
-    /not implemented in sprint 0/,
-  );
-});
-
-test('buildEdges is a stub that throws in sprint 0', () => {
-  assert.throws(
-    () => buildEdges([]),
-    /not implemented in sprint 0/,
-  );
 });
 
 test('recall is a stub that rejects in sprint 0', async () => {

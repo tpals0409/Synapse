@@ -50,3 +50,14 @@ test('copy.en 1:1 with 디자인 목업/content.jsx COPY (key spot checks)', () 
   assert.equal(copy.en.onboarding.cta, 'Begin');
   assert.equal(copy.en.firstChat.placeholder, 'Say anything…');
 });
+
+// Sprint 3 — CaptureToast 카피 1:1 (디자인 목업/content.jsx COPY.{ko,en}.captured / capturedSub).
+test('copy.{ko,en}.firstChat.captured 1:1 with 디자인 목업 COPY.captured', () => {
+  assert.equal(copy.ko.firstChat.captured, '방금 기억됨');
+  assert.equal(copy.en.firstChat.captured, 'Just remembered');
+});
+
+test('copy.{ko,en}.firstChat.capturedSub 1:1 with 디자인 목업 COPY.capturedSub', () => {
+  assert.equal(copy.ko.firstChat.capturedSub, '이 생각은 당신의 그래프에 연결됐어요');
+  assert.equal(copy.en.firstChat.capturedSub, 'Linked into your graph');
+});

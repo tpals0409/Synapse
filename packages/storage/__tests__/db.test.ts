@@ -122,11 +122,12 @@ test('migrate from 0001-only DB upgrades to 0001+0002 (forward compat)', () => {
     const applied = db
       .prepare('SELECT name FROM _migrations ORDER BY name ASC')
       .all() as { name: string }[];
-    assert.deepEqual(
-      applied.map((r) => r.name),
-      ['0001_init.sql', '0002_latency.sql'],
-      'both migrations tracked, in order',
-    );
+    const names = applied.map((r) => r.name);
+    assert.ok(names.includes('0001_init.sql'), '0001 tracked');
+    assert.ok(names.includes('0002_latency.sql'), '0002 tracked (forward compat)');
+    // newer migrations (0003+) are also applied on upgrade — verify monotonic order.
+    const sorted = [...names].sort();
+    assert.deepEqual(names, sorted, 'migrations applied in lexical order');
 
     // legacy row preserved with NULL latency_ms.
     const got = listMessages(db);
@@ -135,9 +136,10 @@ test('migrate from 0001-only DB upgrades to 0001+0002 (forward compat)', () => {
     assert.equal(got[0]?.latency_ms, undefined);
 
     // re-running migrate is still idempotent on upgraded DB.
+    const before = db.prepare('SELECT COUNT(*) as n FROM _migrations').get() as { n: number };
     migrate(db);
     const after = db.prepare('SELECT COUNT(*) as n FROM _migrations').get() as { n: number };
-    assert.equal(after.n, 2);
+    assert.equal(after.n, before.n, 'idempotent on upgraded DB');
 
     db.close();
   } finally {

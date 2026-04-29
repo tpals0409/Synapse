@@ -7,8 +7,13 @@
 //
 // LLM 응답: web 환경에서 Ollama 가 같은 호스트에 있다는 보장이 없으므로
 // 짧은 데모 토큰 시퀀스를 yield (디자인 의도 — ink-rise 시각 확인).
+//
+// Sprint 3 [FROZEN v2026-04-29 D-S3-chatStore-internal-wiring] — native parity 유지.
+// 데모 시퀀스 종료 시 conceptStore.notify 가짜 호출 → CaptureToast ink-rise 시각 확인.
 
 import type { Message } from '@synapse/protocol';
+import type { Concept } from '@synapse/engine';
+import * as conceptStore from './conceptStore';
 
 const memory: Message[] = [];
 
@@ -17,6 +22,8 @@ export function listMessages(): Message[] {
 }
 
 const DEMO_REPLY_KO = ['환영해요. ', '무엇이든 ', '떠오르는 ', '대로 ', '적어보세요.'];
+
+const DEMO_CONCEPT_LABELS = ['멈춤', '일의 리듬', '정리하고 싶음'];
 
 export async function* sendStream(text: string): AsyncIterable<string> {
   const ts0 = Date.now();
@@ -41,6 +48,13 @@ export async function* sendStream(text: string): AsyncIterable<string> {
     ts: ts1,
     latency_ms: ts1 - ts0,
   });
+
+  const demoConcepts: Concept[] = DEMO_CONCEPT_LABELS.map((label) => ({
+    id: cryptoRandom(),
+    label,
+    createdAt: ts1,
+  }));
+  conceptStore.notify(demoConcepts);
 }
 
 function sleep(ms: number): Promise<void> {

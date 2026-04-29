@@ -20,6 +20,7 @@ test('sendStream golden: yields chunks in order, persists user + assistant, retu
       assert.equal(prompt, '안녕');
       return fromArray(['안', '녕', '!']);
     },
+    extractConcepts: async () => [],
   })) {
     tokens.push(tok);
   }
@@ -76,6 +77,7 @@ test('sendStream records latency_ms (ms = ts1 - ts0) on assistant row', async ()
   for await (const _ of sendStream('hello', {
     db,
     completeStream: () => slowStream(),
+    extractConcepts: async () => [],
   })) {
     // drain
   }

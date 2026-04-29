@@ -6,14 +6,24 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./components": "./src/components/index.ts"
   },
   "scripts": {
     "test": "node --test --experimental-strip-types __tests__/*.test.ts || echo 'no tests'",
     "typecheck": "tsc --noEmit"
   },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "@synapse/engine": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "@types/node": "^22.7.5"
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
+    "@synapse/engine": "workspace:*"
   }
 }

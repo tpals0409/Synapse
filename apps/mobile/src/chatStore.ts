@@ -4,6 +4,10 @@
 // 약속: dev doc §4 "FirstChat 가 storage.listMessages + conversation.sendStream 사용".
 // metro 의 platform extension (`.web.ts` 우선) 으로 web 빌드는 native 의존(better-sqlite3)을
 // 번들에 끌어오지 않는다. native (iOS/Android) 빌드는 이 파일이 선택되어 실제 SQLite 영속화.
+//
+// Sprint 3 [FROZEN v2026-04-29 D-S3-chatStore-internal-wiring] — 외부 시그니처는 Sprint 1 동결
+// 그대로 (`sendStream(text): AsyncIterable<string>`). 내부에서 conversation.sendStream 의
+// `prevMessageConceptIds` / `onConcepts` 옵션을 conceptStore 에서 자동 주입.
 
 import {
   openDb,
@@ -13,6 +17,7 @@ import {
 } from '@synapse/storage';
 import { sendStream as sendStreamNative } from '@synapse/conversation';
 import type { Message } from '@synapse/protocol';
+import * as conceptStore from './conceptStore';
 
 let dbHandle: Database | null = null;
 
@@ -29,5 +34,9 @@ export function listMessages(): Message[] {
 }
 
 export function sendStream(text: string): AsyncIterable<string> {
-  return sendStreamNative(text, { db: ensureDb() });
+  return sendStreamNative(text, {
+    db: ensureDb(),
+    prevMessageConceptIds: conceptStore.getPrevTurnConceptIds(),
+    onConcepts: conceptStore.notify,
+  });
 }
