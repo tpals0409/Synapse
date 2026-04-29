@@ -1,0 +1,101 @@
+/* Synapse — Warm paper journal aesthetic */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Warm paper palette — light */
+  --paper: oklch(96.5% 0.012 75);
+  --paper-deep: oklch(94% 0.018 72);
+  --paper-shade: oklch(91% 0.02 70);
+  --ink: oklch(22% 0.018 60);
+  --ink-soft: oklch(38% 0.018 60);
+  --ink-mute: oklch(55% 0.015 60);
+  --ink-faint: oklch(72% 0.012 60);
+  --ink-ghost: oklch(82% 0.01 60);
+  --rule: oklch(86% 0.012 70);
+
+  /* Synapse accent — warm amber/honey */
+  --synapse: oklch(64% 0.14 55);
+  --synapse-deep: oklch(52% 0.15 50);
+  --synapse-glow: oklch(75% 0.13 60);
+  --synapse-mist: oklch(92% 0.04 60);
+
+  /* Hyper-Recall — slightly cooler companion */
+  --bridge: oklch(58% 0.09 240);
+  --bridge-mist: oklch(92% 0.025 240);
+
+  --serif: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --paper: oklch(20% 0.012 60);
+  --paper-deep: oklch(17% 0.014 60);
+  --paper-shade: oklch(24% 0.014 60);
+  --ink: oklch(94% 0.012 70);
+  --ink-soft: oklch(82% 0.012 70);
+  --ink-mute: oklch(65% 0.01 70);
+  --ink-faint: oklch(48% 0.012 60);
+  --ink-ghost: oklch(38% 0.012 60);
+  --rule: oklch(32% 0.012 60);
+  --synapse-mist: oklch(28% 0.04 55);
+  --bridge-mist: oklch(28% 0.03 240);
+}
+
+/* keyframes */
+@keyframes synapse-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+@keyframes synapse-ripple {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes ink-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ghost-breathe {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 0.68; }
+}
+@keyframes shimmer-line {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes recall-emerge {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); filter: blur(4px); }
+  60% { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes thread-draw {
+  from { stroke-dashoffset: 80; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes node-orbit {
+  0% { transform: rotate(0deg) translateX(14px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(14px) rotate(-360deg); }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+@keyframes caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Paper grain — subtle warm texture */
+.paper-grain {
+  background:
+    radial-gradient(ellipse at 20% 10%, oklch(98% 0.012 75 / 0.6), transparent 60%),
+    radial-gradient(ellipse at 80% 90%, oklch(94% 0.022 72 / 0.5), transparent 60%),
+    var(--paper);
+}
+[data-theme="dark"] .paper-grain {
+  background:
+    radial-gradient(ellipse at 20% 10%, oklch(24% 0.018 60 / 0.7), transparent 60%),
+    radial-gradient(ellipse at 80% 90%, oklch(17% 0.012 60 / 0.6), transparent 60%),
+    var(--paper);
+}

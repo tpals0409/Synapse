@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Synapse — Memory-Native AI</title>
+<link rel="stylesheet" href="styles.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  html, body { margin:0; padding:0; background:#f0eee9; font-family: -apple-system, system-ui, sans-serif; }
+  body { min-height: 100vh; }
+</style>
+</head>
+<body data-theme="light">
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="content.jsx"></script>
+<script type="text/babel" src="synapse-ui.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "lang": "ko",
+  "theme": "light",
+  "demoToken": 1
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const lang = t.lang === "en" ? "en" : "ko";
+
+  React.useEffect(() => {
+    document.body.dataset.theme = t.theme || "light";
+  }, [t.theme]);
+
+  const replay = () => setTweak("demoToken", (t.demoToken || 0) + 1);
+
+  const W = 402, H = 874;
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection id="hero" title="Synapse" subtitle={lang === "ko" ? "기억하는 AI · iOS 프로토타입" : "Memory-native AI · iOS prototype"}>
+          <DCArtboard id="onboard" label={lang === "ko" ? "01 · 온보딩 (빈 상태)" : "01 · Onboarding (empty)"} width={W} height={H}>
+            <OnboardingScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="first" label={lang === "ko" ? "02 · 첫 대화 + 기억 캡처" : "02 · First chat + capture"} width={W} height={H}>
+            <FirstChatScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="demo" label={lang === "ko" ? "03 · 라이브 데모 (자동 재생)" : "03 · Live demo (auto-play)"} width={W} height={H}>
+            <DemoScreen lang={lang} playToken={t.demoToken || 0}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="recall" title={lang === "ko" ? "Recall — 3단계" : "Recall — 3 levels"} subtitle={lang === "ko" ? "Ghost Hint → Suggestion → Strong Recall" : "Ghost Hint → Suggestion → Strong Recall"}>
+          <DCArtboard id="ghost" label={lang === "ko" ? "Lv 1 · Ghost Hint" : "Lv 1 · Ghost Hint"} width={W} height={H}>
+            <GhostHintScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="sugg" label={lang === "ko" ? "Lv 2 · Suggestion" : "Lv 2 · Suggestion"} width={W} height={H}>
+            <SuggestionScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="strong" label={lang === "ko" ? "Lv 3 · Strong Recall" : "Lv 3 · Strong Recall"} width={W} height={H}>
+            <StrongRecallScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="hyper" label={lang === "ko" ? "★ Hyper-Recall" : "★ Hyper-Recall"} width={W} height={H}>
+            <HyperRecallScreen lang={lang}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="memory" title={lang === "ko" ? "기억 · 인스펙터" : "Memory · Inspector"} subtitle={lang === "ko" ? "당신이 남긴 흔적 (그래프 시각화 X)" : "Traces you've left (no graph viz)"}>
+          <DCArtboard id="inspect" label={lang === "ko" ? "기억 피드" : "Memory feed"} width={W} height={H}>
+            <InspectorScreen lang={lang}/>
+          </DCArtboard>
+          <DCArtboard id="humble" label={lang === "ko" ? "Humble Retraction" : "Humble Retraction"} width={W} height={H}>
+            <HumbleScreen lang={lang}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="states" title={lang === "ko" ? "상태" : "States"} subtitle={lang === "ko" ? "빈 상태 / 로딩 / 에러" : "Empty / loading / error"}>
+          <DCArtboard id="empty" label={lang === "ko" ? "빈 상태" : "Empty"} width={W} height={H}>
+            <EmptyStateScreen lang={lang} state="empty"/>
+          </DCArtboard>
+          <DCArtboard id="load" label={lang === "ko" ? "그래프 탐색 중" : "Searching graph"} width={W} height={H}>
+            <EmptyStateScreen lang={lang} state="loading"/>
+          </DCArtboard>
+          <DCArtboard id="err" label={lang === "ko" ? "에러" : "Error"} width={W} height={H}>
+            <EmptyStateScreen lang={lang} state="error"/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title={lang === "ko" ? "언어" : "Language"}>
+          <TweakRadio
+            value={t.lang}
+            onChange={(v) => setTweak("lang", v)}
+            options={[
+              { value: "ko", label: "한국어" },
+              { value: "en", label: "English" },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title={lang === "ko" ? "테마" : "Theme"}>
+          <TweakRadio
+            value={t.theme}
+            onChange={(v) => setTweak("theme", v)}
+            options={[
+              { value: "light", label: lang === "ko" ? "종이" : "Paper" },
+              { value: "dark", label: lang === "ko" ? "잉크" : "Ink" },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title={lang === "ko" ? "데모 대화" : "Demo conversation"}>
+          <TweakButton onClick={replay}>
+            {lang === "ko" ? "▶  처음부터 재생" : "▶  Replay from start"}
+          </TweakButton>
+          <div style={{ fontSize: 11, color: "#9a8870", marginTop: 6, fontFamily: "var(--mono)", lineHeight: 1.4 }}>
+            {lang === "ko" ? "‹라이브 데모› 아트보드를 보세요" : "Watch the ‹Live demo› artboard"}
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>

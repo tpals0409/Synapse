@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Synapse",
+    "slug": "synapse",
+    "scheme": "synapse",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.synapse.app"
+    }
+  }
+}
