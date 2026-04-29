@@ -1,5 +1,7 @@
 .claude/
 CLAUDE.md
+SPRINTS.md
+docs/sprints/
 node_modules/
 .expo/
 dist/

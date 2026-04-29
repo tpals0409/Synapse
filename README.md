@@ -109,30 +109,12 @@ Synapse/
 │   ├── storage/                  # SQLite + sqlite-vec
 │   ├── design-system/            # 토큰, 컴포넌트, 한/영, 다크/라이트
 │   └── protocol/                 # 공유 타입
-├── docs/sprints/                 # 스프린트 dev doc (영속 메모리)
+├── docs/setup/                   # Ollama/Gemma 셋업 가이드
 ├── scripts/receipt/              # 스프린트별 자동 검증
 ├── e2e/scenarios/                # 종단 테스트
 ├── 디자인 목업/                  # 시각/카피 단일 진실원 (read-only)
-├── 기획서.md                     # 제품 정의 단일 진실원
-└── SPRINTS.md                    # 스프린트 인덱스
+└── 기획서.md                     # 제품 정의 단일 진실원
 ```
-
----
-
-## 스프린트 로드맵
-
-| # | Status | Title | Goal |
-|---|---|---|---|
-| 0 | ✅ done | [Scaffolding](docs/sprints/sprint-0-scaffolding.md) | 모노레포 + RN+Expo + 로컬 Gemma + sqlite-vec |
-| 1 | ✦ in-progress | [Conversation Loop](docs/sprints/sprint-1-conversation-loop.md) | Onboarding/FirstChat 화면 + LLM 스트리밍 + 메시지 영속화 |
-| 2 | ☐ planned | Memory Formation | Concept 추출 + 임베딩 + Graph 모델 + CaptureToast |
-| 3 | ☐ planned | Recall L1~L3 | Ghost Hint / Suggestion / Strong Recall + Inspector |
-| 4 | ☐ planned | Orchestrator | Trigger / Silence rules (Attention Control) |
-| 5 | ☐ planned | Hyper-Recall | Bridge / Temporal / Domain Crossing |
-| 6 | ☐ planned | Failure & Hygiene | Dismiss/Unlink, Humble Retraction, Forgetting |
-| 7 | ☐ planned | Polish | 애니메이션, 다크/라이트, 한/영, Empty/Error, 사용자 테스트 |
-
-상세는 [SPRINTS.md](SPRINTS.md). 각 스프린트의 dev doc 이 *영속 메모리* 입니다 — `/clear` 후에도 dev doc 만으로 컨텍스트 복원 가능.
 
 ---
 
@@ -148,20 +130,6 @@ Synapse/
 - **모션 의도**: `recall-emerge` (blur→clear), `ink-rise`, `synapse-pulse`, `ghost-breathe`, `thread-draw`, `node-orbit`
 
 단일 진실원: [디자인 목업/styles.css](디자인%20목업/styles.css), [디자인 목업/content.jsx](디자인%20목업/content.jsx).
-
----
-
-## 워크플로우
-
-이 리포지토리는 **dev doc = 영속 메모리** 원칙으로 운영됩니다.
-
-1. `/start` — 현재 스프린트 N + 직전 스프린트 N-1 의 dev doc 두 개만 읽고 컨텍스트 복원, PM 사인오프 후 팀 부트.
-2. **작업** — 각 에이전트가 자기 슬라이스 구현, dev doc §7 Interfaces / §8 Test Scenarios 라이브 갱신.
-3. `/end` — Receipt 자동 검증, dev doc §9~12 마감 (Implementation Map / Decisions / Carry-over / Retrospective), 다음 스프린트 스켈레톤 자동 생성, git tag.
-4. `/clear` — 컨텍스트 리셋.
-5. `/start` — 다음 사이클.
-
-핵심 약속: `/end` 의 *Carry-over* 가 부실하면 다음 사이클이 단절됩니다. *Carry-over* 는 자가완결적이어야 합니다.
 
 ---
 
