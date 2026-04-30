@@ -27,8 +27,20 @@
 //     ("Ghost Hint · 레벨 1" / "Suggestion · 레벨 2" / "Strong Recall · 레벨 3")
 //     을 카피 단일 진실원 트리로 정규화. en: "ghost hint · level 1" / ...
 //
-// (Hyper-Recall / Humble Retraction / Bridge / dismiss / never / expand / collapse 등은
-//  이후 스프린트 범위 — 의도적 제외.)
+// Sprint 6 (T6) 추가 — Failure & Hygiene (Dismiss / HumbleRetraction):
+//   COPY.ko.dismiss   → copy.ko.recall.dismiss   ("지금은 됐어요" / "Not now")
+//   COPY.ko.never     → copy.ko.recall.never     ("다신 보지 않기" / "Never again")
+//   COPY.ko.humble    → copy.ko.recall.humble    ("아, 잘못 연결했네요. 미안해요." / "Ah — I connected the wrong thread. Sorry.")
+//   카피 *값* 은 디자인 목업/content.jsx 의 ko/en 와 1:1 일치.
+//   디자인 목업 SuggestionCard (synapse-ui.jsx L203) 의 dismissText 진실원이 dismiss.
+//   디자인 목업 HumbleRetraction (synapse-ui.jsx L425) 의 사과 본문 진실원이 humble.
+//
+// Sprint 6 (T6) 보류 키 (PM HOLD D-S6-design-system-mockup-conflict 결정 후 적용 예정):
+//   - copy.{ko,en}.recall.unlink     — 디자인 목업 InspectorScreen 에 unlink 슬롯 부재.
+//   - copy.{ko,en}.recall.retracted  — 디자인 목업 메시지 버블에 retracted 라벨 부재.
+//   목업 단일 진실원 헌법 (D-S4-design-system-single-copy-file) 정합 보장 위해 PM 결정 대기.
+//
+// (Hyper-Recall / Bridge / expand / collapse 등은 이후 스프린트 범위 — 의도적 제외.)
 
 export interface OnboardingCopy {
   hi: string;
@@ -59,6 +71,11 @@ export interface RecallCopy {
   suggestion: RecallSurfaceCopy;
   strong: RecallSurfaceCopy;
   inspector: RecallSurfaceCopy;
+  // Sprint 6 (T6) — Failure & Hygiene 액션/사과 카피.
+  // 디자인 목업/content.jsx COPY.{dismiss,never,humble} 1:1.
+  dismiss: string;
+  never: string;
+  humble: string;
 }
 
 export interface CopyShape {
@@ -95,6 +112,9 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       suggestion: { title: '관련 기억', subtitle: 'Suggestion · 레벨 2' },
       strong: { title: '다시 떠오른 생각', subtitle: 'Strong Recall · 레벨 3' },
       inspector: { title: '기억', subtitle: '당신이 남긴 흔적' },
+      dismiss: '지금은 됐어요',
+      never: '다신 보지 않기',
+      humble: '아, 잘못 연결했네요. 미안해요.',
     },
   },
   en: {
@@ -122,6 +142,9 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       suggestion: { title: 'Related memory', subtitle: 'suggestion · level 2' },
       strong: { title: 'A returning thought', subtitle: 'strong recall · level 3' },
       inspector: { title: 'Memory', subtitle: "Traces you've left" },
+      dismiss: 'Not now',
+      never: 'Never again',
+      humble: 'Ah — I connected the wrong thread. Sorry.',
     },
   },
 };

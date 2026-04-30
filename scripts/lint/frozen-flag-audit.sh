@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 # frozen-flag-audit.sh
 # Sprint 2 lint — dev doc §11 *Decisions Made* 의 각 결정 줄에
-# `**[FROZEN v<date> <decision-id>]**` prefix 부착 검증.
+# `**[(FROZEN|SUPERSEDED|CANCELED|ACCEPTED) v<date> <decision-id>]**` prefix 부착 검증.
 #
 # CLI:  bash scripts/lint/frozen-flag-audit.sh <dev-doc-path>
 # 통과: exit 0
 # 위반: stderr 줄 단위 보고 + exit 1
+#
+# Sprint 6 [FROZEN v2026-04-29 D-S6-lint-frozen-flag-audit-regex-alternation]:
+#   carry-over 5 흡수 — Sprint 5 의 5 회 lint blocker 근본 원인 (`SUPERSEDED|CANCELED|ACCEPTED-FINAL`
+#   표현 free-form) 해소. 정규식 alternation 으로 4 종 prefix 모두 수용.
 #
 # 알고리즘:
 #   1. dev doc 의 `## 11.` ~ `## 12.` 사이를 §11 본문으로 추출.
 #   2. 그 안에서 `**Decisions Made:**` ~ `**Open Issues:**` 사이를 결정 블록으로 추출.
 #   3. 결정 블록의 모든 `^- ` bullet 줄을 검사. 단,
 #        - `^- *(.*)*$` 형태의 *meta 주석* (이탤릭) 은 skip.
-#        - bullet 가 prefix `**[FROZEN v<date> <id>]**` 로 시작하지 않으면 위반.
-#        - prefix 정규식: `^- \*\*\[FROZEN v[0-9]{4}-[0-9]{2}-[0-9]{2} [^]]+\]\*\*`.
+#        - bullet 가 prefix `**[<TAG> v<date> <id>]**` (TAG ∈ {FROZEN,SUPERSEDED,CANCELED,ACCEPTED}) 로 시작하지 않으면 위반.
+#        - prefix 정규식: `^- \*\*\[(FROZEN|SUPERSEDED|CANCELED|ACCEPTED) v[0-9]{4}-[0-9]{2}-[0-9]{2} [^]]+\]\*\*`.
 #   4. 빈 줄 / non-bullet 본문은 무시 (들여쓴 sub-bullet 도 *현재 정책상* prefix 면제).
 #
 # 의존: bash, awk, grep.
@@ -79,12 +83,12 @@ while IFS= read -r line; do
     continue
   fi
 
-  # FROZEN prefix 검사
-  if printf '%s' "$line" | grep -Eq '^- \*\*\[FROZEN v[0-9]{4}-[0-9]{2}-[0-9]{2} [^]]+\]\*\*'; then
+  # FROZEN/SUPERSEDED/CANCELED/ACCEPTED prefix 검사 (D-S6-lint-frozen-flag-audit-regex-alternation)
+  if printf '%s' "$line" | grep -Eq '^- \*\*\[(FROZEN|SUPERSEDED|CANCELED|ACCEPTED) v[0-9]{4}-[0-9]{2}-[0-9]{2} [^]]+\]\*\*'; then
     continue
   fi
 
-  echo "[frozen-flag-audit] §11 Decisions Made bullet 에 FROZEN prefix 누락:" >&2
+  echo "[frozen-flag-audit] §11 Decisions Made bullet 에 (FROZEN|SUPERSEDED|CANCELED|ACCEPTED) prefix 누락:" >&2
   echo "    $line" >&2
   violations=$((violations + 1))
 done <<< "$DEC_BLOCK"
@@ -93,5 +97,5 @@ if [ "$violations" -eq 0 ]; then
   exit 0
 fi
 
-echo "[frozen-flag-audit] 위반 ${violations} 건. 각 결정 bullet 에 \`**[FROZEN v<date> <id>]**\` prefix 부착 필요." >&2
+echo "[frozen-flag-audit] 위반 ${violations} 건. 각 결정 bullet 에 \`**[(FROZEN|SUPERSEDED|CANCELED|ACCEPTED) v<date> <id>]**\` prefix 부착 필요." >&2
 exit 1

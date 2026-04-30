@@ -22,6 +22,11 @@
 // [FROZEN v2026-04-29 D-S5-mobile-T6-label-direct] — D-S5-storage-label-expose 적용 후
 // nearestConcepts / traverse 가 label 직접 노출 (storage 시그니처 확장). adapter 의 id fallback
 // 제거 → carry-over 10 해소. 이전 D-S5-mobile-T6-label-fallback-keep SUPERSEDED.
+//
+// Sprint 6 — 외부 시그니처 *확장 only* (기존 메서드 변경 0). 신규 `dismiss(decisionId, conceptIds?)`
+// 메서드 추기. 내부에서 orchestrator.applyDismiss 호출 + storage repo (markDismissed /
+// decayEdgeWeight / pruneEdgesBelow) 를 DI 로 주입. carry-over 5 platform-adapter 네 번째 시범 —
+// dismiss 의 native-only import (storage / orchestrator) 가 .web.ts 분기로 web bundle 0 hits 보존.
 
 import {
   openDb,
@@ -29,6 +34,11 @@ import {
   listMessages as listMessagesNative,
   nearestConcepts,
   traverse,
+  markDismissed,
+  decayEdgeWeight,
+  pruneEdgesBelow,
+  markRetracted,
+  rollbackCaptureForTurn,
   type Database,
 } from '@synapse/storage';
 import {
@@ -36,7 +46,7 @@ import {
   type RecallFn,
 } from '@synapse/conversation';
 import { recallCandidates } from '@synapse/engine';
-import { decide } from '@synapse/orchestrator';
+import { decide, applyDismiss } from '@synapse/orchestrator';
 import type { Message } from '@synapse/protocol';
 import * as conceptStore from './conceptStore';
 import * as recallStore from './recallStore';
@@ -88,13 +98,112 @@ export function listMessages(): Message[] {
   return listMessagesNative(ensureDb());
 }
 
+// Sprint 6 — Humble Retraction caller-pass state.
+// chatStore 가 직전 turn 의 assistant message id + recall_log row id + concept ids 를 캐시.
+// conversation.runRetractionHook 이 user msg append 직후에 이 값들을 deps 로 받아 사용.
+// caller-pass 모델 ([FROZEN v2026-04-29 D-S6-storage-rollback-caller-pass]) 정합 — concepts.turn_id
+// 컬럼 추가 X.
+let prevAssistantMessageId: string | undefined;
+let prevRecallLogId: string | undefined;
+let prevAssistantConceptIds: string[] = [];
+
+// recallStore 의 모든 push 를 구독하여 직전 row.id 갱신.
+// 모듈 로드 시 1회 등록 — sendStream 호출 시점에 이미 prev 값이 신선.
+recallStore.subscribe((row) => {
+  prevRecallLogId = row.id;
+});
+
+// runMemoryFormation 의 onConcepts 콜백 결과를 conceptStore.notify 로 전달하는 동시에
+// 본 모듈도 캐시 (rollbackCaptureForTurn 의 conceptIds 입력 용).
+conceptStore.subscribe((concepts) => {
+  prevAssistantConceptIds = concepts.map((c) => c.id);
+});
+
 export function sendStream(text: string): AsyncIterable<string> {
-  return sendStreamNative(text, {
-    db: ensureDb(),
+  const db = ensureDb();
+  // snapshot prev{Message,Concepts,RecallLog} 값을 호출 시점에 잠금 — 이후 hook 들이 module state
+  // 를 갱신해도 본 turn 의 retraction 입력은 *직전 turn 의 값* 이어야 함.
+  const snapshot = {
+    prevAssistantMessageId,
+    prevAssistantConceptIds: prevAssistantConceptIds.slice(),
+    prevRecallLogId,
+  };
+  const inner = sendStreamNative(text, {
+    db,
     prevMessageConceptIds: conceptStore.getPrevTurnConceptIds(),
     onConcepts: conceptStore.notify,
     recall,
     decide,
     recallStore,
+    // Sprint 6 retraction hook DI — storage repo 함수 3종 + caller-pass 직전 turn state.
+    markRetracted: (messageId) => markRetracted(db, messageId),
+    rollbackCaptureForTurn: (conceptIds) => rollbackCaptureForTurn(db, conceptIds),
+    markDismissed: (recallLogId, cIds) => markDismissed(db, recallLogId, cIds),
+    prevAssistantMessageId: snapshot.prevAssistantMessageId,
+    prevAssistantConceptIds: snapshot.prevAssistantConceptIds,
+    prevRecallLogId: snapshot.prevRecallLogId,
   });
+
+  // outer generator — inner 가 모두 yield 한 *후* listMessages 마지막 assistant id 를
+  // 다음 turn 의 prevAssistantMessageId 로 캐시. inner 에서 던진 에러는 그대로 전파.
+  return (async function* () {
+    for await (const chunk of inner) {
+      yield chunk;
+    }
+    const msgs = listMessagesNative(db);
+    for (let i = msgs.length - 1; i >= 0; i -= 1) {
+      const m = msgs[i];
+      if (m && m.role === 'assistant') {
+        prevAssistantMessageId = m.id;
+        break;
+      }
+    }
+  })();
+}
+
+// Sprint 6 — Dismiss action (T7). UI 의 거절 버튼 → orchestrator.applyDismiss dispatch.
+// conceptIds 미지정 시 recallStore 의 in-memory candidates 에서 row.id 로 조회 후 union.
+//   - cold start 후 in-memory miss 시 row.candidate_ids fallback (storage 영속 그대로).
+// orchestrator.decayEdges 는 conceptIds list 를 받음 → storage.decayEdgeWeight 는 (from,to) pair
+// 단위 → adapter 가 i<j pair 를 enumerate 하여 호출 (무방향 그래프 정합).
+//
+// session-local dismissedDecisionIds Set — 화면 시각 분기 (faded) 즉응용. native/web 짝 강제.
+const dismissedDecisionIds = new Set<string>();
+
+export async function dismiss(
+  decisionId: string,
+  conceptIds?: string[],
+): Promise<void> {
+  const db = ensureDb();
+  const ids = conceptIds ?? resolveConceptIds(decisionId);
+
+  applyDismiss(decisionId, ids, {
+    markDismissed: (recallLogId, cIds) => markDismissed(db, recallLogId, cIds),
+    decayEdges: (cIds, penalty) => {
+      for (let i = 0; i < cIds.length; i += 1) {
+        for (let j = i + 1; j < cIds.length; j += 1) {
+          decayEdgeWeight(db, cIds[i] as string, cIds[j] as string, penalty);
+        }
+      }
+    },
+    pruneEdgesBelow: (threshold) => pruneEdgesBelow(db, threshold).pruned,
+  });
+
+  dismissedDecisionIds.add(decisionId);
+}
+
+function resolveConceptIds(decisionId: string): string[] {
+  const detail = recallStore
+    .getRecentDetailed(Number.POSITIVE_INFINITY)
+    .find((d) => d.row.id === decisionId);
+  if (!detail) return [];
+  if (detail.candidates.length > 0) {
+    return detail.candidates.map((c) => c.conceptId);
+  }
+  return detail.row.candidate_ids;
+}
+
+// 화면이 dismissed 여부 시각 분기 (faded) 시 사용. native/web 짝 동일 시그니처.
+export function isDismissed(decisionId: string): boolean {
+  return dismissedDecisionIds.has(decisionId);
 }

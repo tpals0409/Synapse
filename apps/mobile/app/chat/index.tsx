@@ -19,7 +19,7 @@ import {
   role,
   spacing,
 } from '@synapse/design-system';
-import { CaptureToast } from '@synapse/design-system/components';
+import { CaptureToast, HumbleRetraction } from '@synapse/design-system/components';
 import type { Message } from '@synapse/protocol';
 import type { Concept } from '@synapse/engine';
 import { listMessages, sendStream } from '../../src/chatStore';
@@ -131,11 +131,21 @@ export default function FirstChat() {
 }
 
 function renderRow({ item }: ListRenderItemInfo<DraftMessage>) {
-  return item.role === 'user' ? (
-    <UserBubble text={item.content} />
-  ) : (
-    <AIBubble text={item.content} pending={!!item.pending} />
-  );
+  if (item.role === 'user') {
+    return <UserBubble text={item.content} />;
+  }
+  // Sprint 6 (T7) — Humble Retraction: assistant 메시지가 retracted=1 일 때 직후 카드 mount.
+  // FlatList renderItem 이 single element 요구 → View 로 합성. 디자인 목업 synapse-ui.jsx
+  // L425~443 의 HumbleRetraction 카드 1:1 (PM A안 D-S6-design-system-mockup-conflict-resolution).
+  if (item.retracted === 1) {
+    return (
+      <View>
+        <AIBubble text={item.content} pending={!!item.pending} />
+        <HumbleRetraction text={c.recall.humble} />
+      </View>
+    );
+  }
+  return <AIBubble text={item.content} pending={!!item.pending} />;
 }
 
 function ChatHeader() {

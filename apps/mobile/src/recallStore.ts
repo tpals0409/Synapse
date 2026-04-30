@@ -15,7 +15,13 @@
 // `getRecentDetailed(withinMs, now?): {row, candidates}[]` 추기. Inspector 의 row-별
 // source-pill 시각 분기 (D-S5-InspectorList-source-field) 를 위해 candidates 짝 노출.
 // push/getRecent/getLast/subscribe/recentlyDecided 시그니처 동결 100%.
-// candidates 는 in-memory 만 유지 (cold start = row.candidate_ids 만 — Sprint 6+ retention).
+// candidates 는 in-memory 만 유지 (cold start = row.candidate_ids 만).
+//
+// Sprint 6 — carry-over 3 흡수 (in-memory candidates retention):
+// `sessionRows` + `sessionCandidatesById` 가 push 마다 무한 누적되면 장기 세션에서 메모리 누수.
+// `MAX_ENTRIES = 200` 도입 — 초과 시 oldest row 폐기 (candidates Map 도 같이 evict).
+// native 의 cold start 시 row.candidate_ids 만 가용 — appendRecallLog 가 영속하므로
+// in-memory eviction 후에도 row 자체는 SQLite 에서 복원 가능 (본 sprint 결정).
 
 import {
   appendRecallLog,
@@ -38,6 +44,10 @@ const sessionRows: RecallLogRow[] = [];
 const sessionCandidatesById = new Map<string, RecallCandidate[]>();
 let lastDecision: { act: RecallLogRow['act']; candidates: RecallCandidate[] } | null = null;
 
+// Sprint 6 — in-memory candidates cache retention (carry-over 3).
+// push() 마다 sessionRows / sessionCandidatesById 에 누적 → 장기 세션 누수 방지.
+const MAX_ENTRIES = 200;
+
 let dbHandle: Database | null = null;
 
 function ensureDb(): Database {
@@ -55,6 +65,11 @@ export function push(
   appendRecallLog(ensureDb(), row);
   sessionRows.push(row);
   sessionCandidatesById.set(row.id, candidates);
+  // retention: oldest row + 짝 candidates 폐기. Map.delete 누락 시 Map 만 무한 성장.
+  while (sessionRows.length > MAX_ENTRIES) {
+    const evicted = sessionRows.shift();
+    if (evicted) sessionCandidatesById.delete(evicted.id);
+  }
   lastDecision = { act: row.act, candidates };
   for (const l of listeners) l(row);
 }

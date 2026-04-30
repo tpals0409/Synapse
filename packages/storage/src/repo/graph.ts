@@ -63,17 +63,23 @@ const DEFAULT_MAX_DEPTH = 3;
 // edge 가 가리키는 concept 가 concepts 테이블에 부재한 경우 (실 데이터에는 거의 없음 —
 // FK 미설정이지만 appendConcept → appendEdge 순서 보장) 결과에서 제외.
 function traverseOneHop(db: Database, seedId: string): TraverseHit[] {
+  // [D-S6-storage-sql-secondary-sort-audit] UNION ALL 자체는 정렬 보장 X — 외부 ORDER BY 로
+  // 결정성 박음. label ASC, other ASC (label tie 시 conceptId ASC).
+  // BFS 결과 의미는 보존 (가장 짧은 경로 + visited 가드 — 외부 호출자에서 정렬 후 사용).
   const rows = db
     .prepare(
-      `SELECT e.to_id AS other, c.label AS label, e.weight AS weight, e.kind AS kind
-         FROM edges e
-         JOIN concepts c ON c.id = e.to_id
-        WHERE e.from_id = ?
-       UNION ALL
-       SELECT e.from_id AS other, c.label AS label, e.weight AS weight, e.kind AS kind
-         FROM edges e
-         JOIN concepts c ON c.id = e.from_id
-        WHERE e.to_id = ?`,
+      `SELECT * FROM (
+         SELECT e.to_id AS other, c.label AS label, e.weight AS weight, e.kind AS kind
+           FROM edges e
+           JOIN concepts c ON c.id = e.to_id
+          WHERE e.from_id = ?
+         UNION ALL
+         SELECT e.from_id AS other, c.label AS label, e.weight AS weight, e.kind AS kind
+           FROM edges e
+           JOIN concepts c ON c.id = e.from_id
+          WHERE e.to_id = ?
+       )
+       ORDER BY label ASC, other ASC`,
     )
     .all(seedId, seedId) as {
     other: string;

@@ -23,6 +23,7 @@ export {
   recallCandidates,
   DEFAULT_RECALL_SEMANTIC_THRESHOLD,
   DEFAULT_RECALL_K,
+  DEFAULT_DISMISS_PENALTY,
 } from './src/recall.ts';
 export type {
   RecallCandidatesOptions,
@@ -33,7 +34,11 @@ export type {
   BridgeFn,
   TemporalFn,
   DomainCrossingFn,
+  RecordTouchFn,
+  GetLastUsedAtFn,
 } from './src/recall.ts';
+// Sprint 6 T3 — forgetting decay [FROZEN v2026-04-29 D-S6-forgetting-policy].
+export { decayScore, DEFAULT_HALF_LIFE_MS } from './src/forgetting.ts';
 // Sprint 5 T3 — hyperRecall 3 함수 + defaults + 타입 [FROZEN D-S5-engine-root-index-hyperrecall-export].
 export {
   bridgeCandidates,

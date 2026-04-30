@@ -52,6 +52,10 @@ export type RecallLogRow = {
   act: DecisionAct;
   candidate_ids: string[];
   suppressed_reason?: SuppressedReason;
+  // [FROZEN v2026-04-29 D-S6-protocol-recall-log-dismissed]
+  // Sprint 6 dismiss action 의 결과. 1 = 사용자가 거절한 결정.
+  // 미설정 = 0 (silent migration default).
+  dismissed?: number;
 };
 
 export type DecideContext = {

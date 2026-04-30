@@ -85,6 +85,46 @@ test('0002: messages.latency_ms column exists, round-trips on appendMessage', ()
   }
 });
 
+test('listMessages: retracted 컬럼 노출 (D-S6-storage-listMessages-retracted)', () => {
+  const { db, cleanup } = freshDb();
+  try {
+    appendMessage(db, { id: 'm1', role: 'user', content: '안녕', ts: 100 });
+    appendMessage(db, { id: 'm2', role: 'assistant', content: '잘못된 답', ts: 200 });
+    // m2 만 retracted=1 마킹 (raw UPDATE — db.test 가 markRetracted 외 의존 0).
+    db.prepare('UPDATE messages SET retracted = 1 WHERE id = ?').run('m2');
+
+    const got = listMessages(db);
+    assert.equal(got.length, 2);
+    assert.equal(got[0]?.id, 'm1');
+    assert.equal(got[0]?.retracted, undefined, 'retracted=0 row → undefined (옵셔널)');
+    assert.equal(got[1]?.id, 'm2');
+    assert.equal(got[1]?.retracted, 1, 'retracted=1 row → Message.retracted = 1');
+  } finally {
+    cleanup();
+  }
+});
+
+test('listMessages: ORDER BY ts ASC, id ASC — ts tie 시 id ASC 결정성', () => {
+  const { db, cleanup } = freshDb();
+  try {
+    // 동일 ts 의 3 row — id ASC 면 m-aaa, m-bbb, m-ccc 순.
+    appendMessage(db, { id: 'm-ccc', role: 'user', content: 'c', ts: 500 });
+    appendMessage(db, { id: 'm-aaa', role: 'user', content: 'a', ts: 500 });
+    appendMessage(db, { id: 'm-bbb', role: 'user', content: 'b', ts: 500 });
+
+    for (let i = 0; i < 5; i++) {
+      const got = listMessages(db);
+      assert.deepEqual(
+        got.map((m) => m.id),
+        ['m-aaa', 'm-bbb', 'm-ccc'],
+        `tie-break by id ASC, run ${i}`,
+      );
+    }
+  } finally {
+    cleanup();
+  }
+});
+
 test('migrate from 0001-only DB upgrades to 0001+0002 (forward compat)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'synapse-storage-'));
   const path = join(dir, 'legacy.db');

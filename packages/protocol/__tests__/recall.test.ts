@@ -86,6 +86,24 @@ test('protocol: RecallLogRow.suppressed_reason is optional', () => {
   assert.equal(row.suppressed_reason, undefined);
 });
 
+test('protocol: RecallLogRow.dismissed is optional number (D-S6-protocol-recall-log-dismissed)', () => {
+  const r1: RecallLogRow = {
+    id: 'rl_a',
+    decided_at: 1,
+    act: 'suggestion',
+    candidate_ids: ['c1'],
+  };
+  assert.equal(r1.dismissed, undefined);
+  const r2: RecallLogRow = {
+    id: 'rl_b',
+    decided_at: 2,
+    act: 'suggestion',
+    candidate_ids: ['c1'],
+    dismissed: 1,
+  };
+  assert.equal(r2.dismissed, 1);
+});
+
 test('protocol: DecideContext shape requires userMessage / candidates / recencyMs / tokenContext', () => {
   const ctx: DecideContext = {
     userMessage: '안녕',

@@ -28,6 +28,7 @@ import {
   type EmbeddedConcept,
 } from '@synapse/engine';
 import { decide as defaultDecide, applySilence } from '@synapse/orchestrator';
+import { detectRetractionSignal as defaultDetectRetraction } from './retraction.ts';
 
 export type SendDeps = {
   db: Database;
@@ -134,11 +135,57 @@ export type RecallHookDeps = {
   recentWindowMs?: number;
 };
 
+/**
+ * Sprint 6 Humble Retraction hook DI.
+ *
+ * - 사용자가 직전 assistant 응답을 부정하는 신호("아니야 / no that's wrong" 등)를 감지한 순간,
+ *   직전 assistant 메시지 retracted 마킹 + 직전 turn 의 capture (concepts/edges) 회수.
+ * - **caller-pass 모델 ([FROZEN v2026-04-29 D-S6-storage-rollback-caller-pass])**:
+ *   conceptIds 는 storage 가 turn_id 로 역추적하지 않고, caller (mobile chatStore) 가 직전 turn 의
+ *   `runMemoryFormation.onConcepts` 콜백에서 보유한 list 를 그대로 주입. concepts 에 turn_id 컬럼 X.
+ * - 옵션 hook 패턴 (RecallHook 패턴 답습): 의존성 미주입 시 hook noop.
+ * - **시그니처 동결 보존**: RecallFn / DecideFn / RecallStore / RecallHookDeps / runMemoryFormation
+ *   변경 0 — 신규 `runRetractionHook` 만 추기.
+ */
+export type DetectRetractionFn = (text: string) => boolean;
+
+export type MarkRetractedFn = (messageId: string) => void;
+
+export type RollbackCaptureFn = (
+  conceptIds: string[],
+) => { rolledback: number } | void;
+
+export type MarkDismissedFn = (
+  recallLogId: string,
+  conceptIds: string[],
+) => void;
+
+export type RetractionHookDeps = {
+  /** Override 부정 신호 감지. Default: regex 기반 `detectRetractionSignal`. */
+  detectRetraction?: DetectRetractionFn;
+  /** storage `markRetracted` 의 DI 바인딩. 미주입 시 hook noop. */
+  markRetracted?: MarkRetractedFn;
+  /** storage `rollbackCaptureForTurn` 의 DI 바인딩. 미주입 시 capture 회수만 skip. */
+  rollbackCaptureForTurn?: RollbackCaptureFn;
+  /**
+   * 직전 assistant turn 의 recall_log row dismiss 마킹 (optional).
+   * 미주입 시 recall_log 갱신 skip — markRetracted + rollback 만 수행.
+   */
+  markDismissed?: MarkDismissedFn;
+  /** 직전 assistant 메시지 id (caller-pass). 없으면 hook noop. */
+  prevAssistantMessageId?: string;
+  /** 직전 turn 의 capture concept ids (caller-pass). 비어있으면 rollback skip. */
+  prevAssistantConceptIds?: string[];
+  /** 직전 turn 의 recall_log row id (caller-pass, optional). markDismissed 호출에 사용. */
+  prevRecallLogId?: string;
+};
+
 export type SendStreamDeps = {
   db: Database;
   completeStream?: (prompt: string) => AsyncIterable<string>;
 } & MemoryFormationDeps &
-  RecallHookDeps;
+  RecallHookDeps &
+  RetractionHookDeps;
 
 export async function send(text: string, deps: SendDeps): Promise<string> {
   const complete = deps.complete ?? gemma.complete;
@@ -180,6 +227,16 @@ export async function* sendStream(
   };
   appendMessage(deps.db, userMsg);
 
+  // Sprint 6 Humble Retraction hook — user append 직후 + Recall hook *전*.
+  // 부정 신호 hit 시 직전 assistant 메시지 회수 + capture rollback. fire-and-forget; 실패는
+  // user reply 흐름과 격리. 의존성 (markRetracted / prevAssistantMessageId) 미주입 시 noop.
+  // 시그니처 동결 — RecallFn / DecideFn / RecallStore 변경 0; 신규 `runRetractionHook` 만 추기.
+  try {
+    runRetractionHook(text, deps);
+  } catch (err) {
+    logger.warn('synapse/conversation: retraction hook failed', err);
+  }
+
   // Sprint 4 Recall hook — user append 직후 + assistant 첫 chunk 도달 *전*.
   // fire-and-forget; recall/decide 실패는 user reply 흐름과 격리 (silent fallback).
   // Sprint 5 활성화 (D-S5-T5-conversation-hook-activation): Bridge / Temporal / Domain
@@ -212,6 +269,38 @@ export async function* sendStream(
 }
 
 const DEFAULT_RECENT_WINDOW_MS = 60_000;
+
+// Sprint 6 — Humble Retraction.
+// 호출 위치 = sendStream 의 user msg append 직후 + Recall hook 전. 동기 (storage repo 함수가 동기).
+// 옵션 hook 패턴: 어느 의존성이라도 빠지면 그 단계만 skip — 전체 noop 으로 흐름 보존.
+// caller-pass 모델: prevAssistantMessageId / prevAssistantConceptIds / prevRecallLogId 는
+// caller (mobile chatStore) 가 직전 turn 끝에서 보유한 값 그대로 주입.
+function runRetractionHook(
+  userText: string,
+  deps: RetractionHookDeps,
+): void {
+  const detect = deps.detectRetraction ?? defaultDetectRetraction;
+  if (!detect(userText)) return;
+
+  // 직전 assistant 메시지가 없으면 hook noop — 첫 user 메시지일 수 있고, 직전 turn 이 user 의
+  // 연속 입력일 수도 있다 (chatStore 가 prevAssistantMessageId 를 갱신하지 않은 상태).
+  const prevId = deps.prevAssistantMessageId;
+  if (!prevId) return;
+
+  // markRetracted 미주입 시 hook 의 핵심 효과가 없으므로 전체 skip (옵션 hook 패턴).
+  if (!deps.markRetracted) return;
+  deps.markRetracted(prevId);
+
+  const conceptIds = deps.prevAssistantConceptIds ?? [];
+  if (conceptIds.length > 0 && deps.rollbackCaptureForTurn) {
+    deps.rollbackCaptureForTurn(conceptIds);
+  }
+
+  // recall_log dismiss 마킹은 optional — recall hook 이 직전 turn 에 push 한 row id 가 있을 때만.
+  if (deps.prevRecallLogId && deps.markDismissed) {
+    deps.markDismissed(deps.prevRecallLogId, conceptIds);
+  }
+}
 
 async function runRecallHook(
   userMessage: string,

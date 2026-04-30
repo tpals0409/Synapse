@@ -10,6 +10,7 @@ import {
   domainCrossingCandidates as defaultDomainCrossingCandidates,
   type HyperTraverseFn,
 } from './hyperRecall.ts';
+import { decayScore, DEFAULT_HALF_LIFE_MS } from './forgetting.ts';
 
 export type NearestRecallHit = { id: string; label: string; score: number };
 
@@ -26,6 +27,27 @@ export type TraverseFn = (
   conceptId: string,
   depth: number,
 ) => Promise<TraverseHit[]>;
+
+/**
+ * Sprint 6 — storage `recordTouch(db, conceptId, now)` DI.
+ * nearestConcepts MATCH hit 시점에 호출되어 `last_used_at` 갱신.
+ * 미주입 시 forgetting decay 의 입력 신호 갱신은 storage 외부에서 수동.
+ */
+export type RecordTouchFn = (
+  db: unknown,
+  conceptId: string,
+  now: number,
+) => Promise<void> | void;
+
+/**
+ * Sprint 6 — Concept 의 last_used_at 조회 DI.
+ * forgetting decay 의 ageMs 계산용. (db, conceptId) → last_used_at (ms epoch).
+ * 미주입 시 forgetting decay 비활성 (semantic score 그대로).
+ */
+export type GetLastUsedAtFn = (
+  db: unknown,
+  conceptId: string,
+) => Promise<number | undefined> | number | undefined;
 
 /** Sprint 5 합집합 hooks — 각 신규 source 의 candidate 생성 함수. 미주입 시 hyperRecall 직접. */
 export type BridgeFn = (
@@ -61,7 +83,30 @@ export type RecallCandidatesOptions = {
   temporal?: TemporalFn;
   /** DI: domain crossing generator override. 기본 = hyperRecall.domainCrossingCandidates. */
   domainCrossing?: DomainCrossingFn;
+  /**
+   * Sprint 6 — DI: storage recordTouch override. semantic hit 시점에 호출 →
+   * `concepts.last_used_at = now` 갱신. 미주입 시 호출 skip.
+   */
+  recordTouch?: RecordTouchFn;
+  /**
+   * Sprint 6 — DI: storage getLastUsedAt override. forgetting decay ageMs 계산.
+   * 미주입 시 forgetting decay 비활성.
+   */
+  getLastUsedAt?: GetLastUsedAtFn;
+  /** Sprint 6 — forgetting decay half-life (ms). default = 7d. */
+  halfLifeMs?: number;
+  /** Sprint 6 — current time (ms epoch). default = Date.now(). 테스트 결정성용. */
+  now?: number;
+  /**
+   * Sprint 6 — dismiss penalty 대상 conceptId set. 같은 id 가 후보에 있으면
+   * `score *= dismissPenalty`. orchestrator/conversation 가 호출 시점에 주입.
+   */
+  dismissedConceptIds?: Set<string>;
+  /** Sprint 6 — dismiss penalty 배수. default = 0.5. */
+  dismissPenalty?: number;
 };
+
+export const DEFAULT_DISMISS_PENALTY = 0.5;
 
 export const DEFAULT_RECALL_SEMANTIC_THRESHOLD = 0.5;
 export const DEFAULT_RECALL_K = 5;
@@ -220,6 +265,42 @@ export async function recallCandidates(
       recentDecisions: opts.recentDecisions,
     });
     for (const t of temporals) mergeCandidate(merged, t);
+  }
+
+  // [FROZEN v2026-04-29 D-S6-engine-recall-forgetting-dismiss]
+  // 모든 후보 누적 후 score 변형: forgetting decay → dismiss penalty.
+  // recordTouch 는 forgetting 적용 후 (다음 호출이 fresh 로 인식하도록).
+  const now = opts.now ?? Date.now();
+  const halfLifeMs = opts.halfLifeMs ?? DEFAULT_HALF_LIFE_MS;
+  const dismissPenalty = opts.dismissPenalty ?? DEFAULT_DISMISS_PENALTY;
+
+  if (opts.getLastUsedAt) {
+    for (const [id, c] of merged) {
+      const lastUsed = await opts.getLastUsedAt(opts.db, id);
+      if (lastUsed !== undefined && lastUsed > 0) {
+        const ageMs = now - lastUsed;
+        const decayed = decayScore(c.score, ageMs, halfLifeMs);
+        merged.set(id, { ...c, score: decayed });
+      }
+    }
+  }
+
+  if (opts.dismissedConceptIds && opts.dismissedConceptIds.size > 0) {
+    for (const [id, c] of merged) {
+      if (opts.dismissedConceptIds.has(id)) {
+        merged.set(id, { ...c, score: c.score * dismissPenalty });
+      }
+    }
+  }
+
+  // [FROZEN v2026-04-29 D-S6-engine-record-touch-after-decay]
+  // semantic hit 의 conceptId 만 touch — co_occur/bridge/temporal/domain_crossing 은
+  // 직접 hit 이 아닌 파생이므로 last_used_at 갱신 책임 외.
+  if (opts.recordTouch) {
+    for (const hit of semanticHits) {
+      if (hit.score < threshold) continue;
+      await opts.recordTouch(opts.db, hit.id, now);
+    }
   }
 
   return Array.from(merged.values()).sort((a, b) => {

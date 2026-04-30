@@ -100,3 +100,26 @@ test('copy: recall 4 surfaces (ghost/suggestion/strong/inspector) 모두 RecallS
     }
   }
 });
+
+// Sprint 6 (T6) — Dismiss / HumbleRetraction 카피 1:1 (디자인 목업/content.jsx COPY.{dismiss,never,humble}).
+test('copy.ko.recall.{dismiss,never,humble} 1:1 with 디자인 목업 COPY (Sprint 6)', () => {
+  assert.equal(copy.ko.recall.dismiss, '지금은 됐어요');
+  assert.equal(copy.ko.recall.never, '다신 보지 않기');
+  assert.equal(copy.ko.recall.humble, '아, 잘못 연결했네요. 미안해요.');
+});
+
+test('copy.en.recall.{dismiss,never,humble} 1:1 with 디자인 목업 COPY (Sprint 6)', () => {
+  assert.equal(copy.en.recall.dismiss, 'Not now');
+  assert.equal(copy.en.recall.never, 'Never again');
+  assert.equal(copy.en.recall.humble, 'Ah — I connected the wrong thread. Sorry.');
+});
+
+test('copy: recall.{dismiss,never,humble} 모두 비어있지 않은 string (Sprint 6 Failure & Hygiene)', () => {
+  for (const lang of ['ko', 'en'] as const) {
+    for (const k of ['dismiss', 'never', 'humble'] as const) {
+      const v = copy[lang].recall[k];
+      assert.equal(typeof v, 'string', `${lang}.recall.${k}`);
+      assert.ok(v.length > 0, `${lang}.recall.${k} non-empty`);
+    }
+  }
+});

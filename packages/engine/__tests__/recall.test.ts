@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import {
   recallCandidates,
   EMBED_DIM,
+  DEFAULT_HALF_LIFE_MS,
   type EmbedFn,
   type NearestRecallFn,
   type TraverseFn,
+  type RecordTouchFn,
+  type GetLastUsedAtFn,
 } from '../index.ts';
 
 const fakeDb = { __fake: true };
@@ -241,4 +244,158 @@ test('recallCandidates Sprint 5: 같은 conceptId 가 semantic + bridge 모두 h
   assert.equal(out.length, 1);
   assert.equal(out[0]?.source, 'mixed');
   assert.equal(out[0]?.score, 0.85);
+});
+
+// ── Sprint 6: forgetting decay + dismiss penalty (D-S6-engine-recall-forgetting-dismiss) ──
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+test('recallCandidates Sprint 6: recordTouch DI 호출 — semantic hit conceptId 마다 1회', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'a', label: 'a', score: 0.9 },
+    { id: 'b', label: 'b', score: 0.7 },
+    { id: 'low', label: 'low', score: 0.3 },
+  ];
+  const touched: Array<{ id: string; now: number }> = [];
+  const recordTouch: RecordTouchFn = async (_db, id, now) => {
+    touched.push({ id, now });
+  };
+  const NOW = 1_700_000_000_000;
+  await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    recordTouch,
+    now: NOW,
+    semanticThreshold: 0.5,
+  });
+  // threshold 미만 'low' 는 touch 0 회. 'a', 'b' 만 touch.
+  assert.equal(touched.length, 2);
+  assert.deepEqual(
+    touched.map((t) => t.id).sort(),
+    ['a', 'b'],
+  );
+  assert.ok(touched.every((t) => t.now === NOW));
+});
+
+test('recallCandidates Sprint 6: forgetting decay 적용 — last_used_at=now-7d → score*0.5', async () => {
+  const NOW = 1_700_000_000_000;
+  const nearest: NearestRecallFn = async () => [
+    { id: 'old', label: 'old', score: 1.0 },
+  ];
+  const getLastUsedAt: GetLastUsedAtFn = async (_db, id) => {
+    if (id === 'old') return NOW - DEFAULT_HALF_LIFE_MS; // 7 days ago
+    return undefined;
+  };
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    getLastUsedAt,
+    now: NOW,
+  });
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.conceptId, 'old');
+  assert.equal(out[0]?.score, 0.5);
+});
+
+test('recallCandidates Sprint 6: forgetting decay 비활성 — getLastUsedAt 미주입 시 score 변화 0', async () => {
+  const NOW = 1_700_000_000_000;
+  const nearest: NearestRecallFn = async () => [
+    { id: 'a', label: 'a', score: 0.9 },
+  ];
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    now: NOW,
+  });
+  assert.equal(out[0]?.score, 0.9);
+});
+
+test('recallCandidates Sprint 6: forgetting decay skip — last_used_at undefined or 0 (silent migration default)', async () => {
+  const NOW = 1_700_000_000_000;
+  const nearest: NearestRecallFn = async () => [
+    { id: 'fresh', label: 'fresh', score: 0.9 },
+    { id: 'never', label: 'never', score: 0.8 },
+  ];
+  const getLastUsedAt: GetLastUsedAtFn = async (_db, id) => {
+    if (id === 'fresh') return undefined;
+    if (id === 'never') return 0;
+    return undefined;
+  };
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    getLastUsedAt,
+    now: NOW,
+  });
+  // 둘 다 decay 비적용 — score 그대로
+  const fresh = out.find((c) => c.conceptId === 'fresh');
+  const never = out.find((c) => c.conceptId === 'never');
+  assert.equal(fresh?.score, 0.9);
+  assert.equal(never?.score, 0.8);
+});
+
+test('recallCandidates Sprint 6: dismiss penalty — dismissedConceptIds set 매칭 시 score *= 0.5 (default)', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'dismissed', label: 'X', score: 0.9 },
+    { id: 'kept', label: 'Y', score: 0.8 },
+  ];
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    dismissedConceptIds: new Set(['dismissed']),
+  });
+  const dismissed = out.find((c) => c.conceptId === 'dismissed');
+  const kept = out.find((c) => c.conceptId === 'kept');
+  assert.equal(dismissed?.score, 0.45); // 0.9 * 0.5
+  assert.equal(kept?.score, 0.8);
+});
+
+test('recallCandidates Sprint 6: dismiss penalty 커스텀 배수 (dismissPenalty=0.1) 적용', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'd', label: 'd', score: 1.0 },
+  ];
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    dismissedConceptIds: new Set(['d']),
+    dismissPenalty: 0.1,
+  });
+  assert.equal(out[0]?.score, 0.1);
+});
+
+test('recallCandidates Sprint 6: forgetting + dismiss 합성 — 7d 경과 + dismiss → score *= 0.5 * 0.5 = 0.25', async () => {
+  const NOW = 1_700_000_000_000;
+  const nearest: NearestRecallFn = async () => [
+    { id: 'both', label: 'both', score: 1.0 },
+  ];
+  const getLastUsedAt: GetLastUsedAtFn = async () => NOW - DEFAULT_HALF_LIFE_MS;
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+    getLastUsedAt,
+    dismissedConceptIds: new Set(['both']),
+    now: NOW,
+  });
+  assert.equal(out[0]?.score, 0.25);
+});
+
+test('recallCandidates Sprint 6: 시그니처 동결 — 기존 옵션 (db/embed/nearest/traverse/hyperTraverse/bridge/temporal/domainCrossing/recentDecisions/k/semanticThreshold) 그대로 동작', async () => {
+  const nearest: NearestRecallFn = async () => [
+    { id: 'a', label: 'a', score: 0.7 },
+  ];
+  // Sprint 6 신규 옵션 0개 — Sprint 5 그대로
+  const out = await recallCandidates('q', {
+    db: fakeDb,
+    embed,
+    nearest,
+  });
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.score, 0.7);
 });

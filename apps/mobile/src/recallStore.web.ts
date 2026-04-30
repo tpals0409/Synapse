@@ -11,6 +11,9 @@
 //
 // Sprint 5 [FROZEN v2026-04-29 D-S5-recallStore-detailed-getter] — 신규 export
 // `getRecentDetailed` native 짝 (carry-over 5 세 번째 시범). storage 의존 0 그대로.
+//
+// Sprint 6 — carry-over 3 흡수 (in-memory candidates retention).
+// native 와 동일한 MAX_ENTRIES=200 적용. native/web 짝 강제 (carry-over 5 platform-adapter).
 
 import type { RecallCandidate, RecallLogRow } from '@synapse/protocol';
 
@@ -26,12 +29,19 @@ const memoryCandidatesById = new Map<string, RecallCandidate[]>();
 const listeners = new Set<Listener>();
 let lastDecision: { act: RecallLogRow['act']; candidates: RecallCandidate[] } | null = null;
 
+// Sprint 6 — in-memory candidates cache retention (carry-over 3).
+const MAX_ENTRIES = 200;
+
 export function push(
   row: RecallLogRow,
   candidates: RecallCandidate[] = [],
 ): void {
   memory.push(row);
   memoryCandidatesById.set(row.id, candidates);
+  while (memory.length > MAX_ENTRIES) {
+    const evicted = memory.shift();
+    if (evicted) memoryCandidatesById.delete(evicted.id);
+  }
   lastDecision = { act: row.act, candidates };
   for (const l of listeners) l(row);
 }

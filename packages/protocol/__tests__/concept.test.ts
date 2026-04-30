@@ -45,3 +45,15 @@ test('protocol/concept: EdgeKind re-export from concept module is identical to r
   const k: EdgeKind = 'co_occur';
   assert.equal(k, 'co_occur');
 });
+
+test('protocol/concept: Concept.last_used_at is optional number (D-S6-protocol-concept-last-used-at)', () => {
+  const c1: Concept = { id: 'c1', label: 'l', createdAt: 1 };
+  assert.equal(c1.last_used_at, undefined);
+  const c2: Concept = {
+    id: 'c2',
+    label: 'l',
+    createdAt: 1,
+    last_used_at: 1_700_000_000_000,
+  };
+  assert.equal(c2.last_used_at, 1_700_000_000_000);
+});

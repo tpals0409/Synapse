@@ -19,10 +19,16 @@
 // Sprint 5 [FROZEN v2026-04-29 D-S5-protocol-concept-edge-migration] —
 // Concept import 경로 protocol 단일화 (engine shim 우회). carry-over 7 잔여 해소.
 // demo source 도 6 종 cycle 로 InspectorList source-pill 시각 검증 (data 다양화만).
+//
+// Sprint 6 — 외부 시그니처 *확장 only* (carry-over 5 platform-adapter 네 번째 시범).
+// 신규 `dismiss(decisionId, conceptIds?)` web 짝 — storage / orchestrator import 0
+// (web bundle 0 hits 검증 대상). demo 모드: in-memory recall_log row 를 dismissed 마킹 (시각 분기용).
 
 import type { Concept, Message, RecallCandidate, RecallLogRow, RecallSource } from '@synapse/protocol';
 import * as conceptStore from './conceptStore';
 import * as recallStore from './recallStore';
+
+const dismissedDecisionIds = new Set<string>();
 
 const memory: Message[] = [];
 
@@ -94,6 +100,20 @@ export async function* sendStream(text: string): AsyncIterable<string> {
     candidate_ids: candidates.map((c) => c.conceptId),
   };
   recallStore.push(row, candidates);
+}
+
+// Sprint 6 — Dismiss action web 짝 (T7). storage / orchestrator import 0.
+// in-memory dismissedDecisionIds Set 만 갱신 → 화면 시각 분기 (faded) 데이터 소스.
+// DEMO_SOURCE_CYCLE 그대로 (회전 영향 0).
+export async function dismiss(
+  decisionId: string,
+  _conceptIds?: string[],
+): Promise<void> {
+  dismissedDecisionIds.add(decisionId);
+}
+
+export function isDismissed(decisionId: string): boolean {
+  return dismissedDecisionIds.has(decisionId);
 }
 
 function sleep(ms: number): Promise<void> {

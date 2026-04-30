@@ -4,6 +4,7 @@ export type {
   SendStreamDeps,
   MemoryFormationDeps,
   RecallHookDeps,
+  RetractionHookDeps,
   ExtractConceptsFn,
   EmbedConceptFn,
   BuildEdgesFn,
@@ -11,5 +12,10 @@ export type {
   RecallFn,
   DecideFn,
   RecallStore,
+  DetectRetractionFn,
+  MarkRetractedFn,
+  RollbackCaptureFn,
+  MarkDismissedFn,
   Logger,
 } from './src/loop.ts';
+export { detectRetractionSignal } from './src/retraction.ts';

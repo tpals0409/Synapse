@@ -43,12 +43,13 @@ export function recentlyDecidedFor(
 ): RecallLogRow | null {
   // candidate_ids 는 JSON.stringify 결과 (예: '["c1","c2"]'). LIKE 단순 매칭.
   const pattern = `%"${candidateId}"%`;
+  // [D-S6-storage-sql-secondary-sort-audit] decided_at tie 시 결정성 — id ASC secondary.
   const row = db
     .prepare(
       `SELECT id, decided_at, act, candidate_ids, suppressed_reason
        FROM recall_log
        WHERE decided_at >= ? AND candidate_ids LIKE ?
-       ORDER BY decided_at DESC
+       ORDER BY decided_at DESC, id ASC
        LIMIT 1`,
     )
     .get(now - withinMs, pattern) as RecallLogDbRow | undefined;

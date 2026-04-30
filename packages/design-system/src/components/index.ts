@@ -25,3 +25,13 @@ export type {
   InspectorAct,
   InspectorSource,
 } from './InspectorList.tsx';
+
+// Sprint 6 (T6) — Dismiss / HumbleRetraction.
+export { DismissButton, DISMISS_BUTTON_VARIANTS } from './DismissButton.tsx';
+export type { DismissButtonProps, DismissButtonVariant } from './DismissButton.tsx';
+
+// Sprint 6 (T6) [FROZEN D-S6-design-system-mockup-conflict-resolution] PM A안 채택 —
+// retracted 메시지 시각 = ChatBubble.retracted prop 신설 X / HumbleRetraction 카드 mount.
+// 디자인 목업 synapse-ui.jsx L425-443 1:1.
+export { HumbleRetraction, HumbleRetractionMotionTokens } from './HumbleRetraction.tsx';
+export type { HumbleRetractionProps } from './HumbleRetraction.tsx';

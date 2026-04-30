@@ -19,3 +19,16 @@ test('protocol: Role union accepts user and assistant', () => {
   const b: Role = 'assistant';
   assert.notEqual(a, b);
 });
+
+test('protocol: Message.retracted is optional number (D-S6-protocol-message-retracted)', () => {
+  const m1: Message = { id: 'm1', role: 'assistant', content: 'x', ts: 1 };
+  assert.equal(m1.retracted, undefined);
+  const m2: Message = {
+    id: 'm2',
+    role: 'assistant',
+    content: 'y',
+    ts: 2,
+    retracted: 1,
+  };
+  assert.equal(m2.retracted, 1);
+});
