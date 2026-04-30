@@ -13,6 +13,8 @@ export {
 } from './src/repo/forgetting.ts';
 export { markRetracted, rollbackCaptureForTurn } from './src/repo/retraction.ts';
 export { markDismissed, decayEdgeWeight } from './src/repo/dismiss.ts';
+export { seedFullJourney } from './src/repo/seedFullJourney.ts';
+export type { FullJourneyFixture } from './src/repo/seedFullJourney.ts';
 export type { NearestConcept } from './src/repo/embed.ts';
 export type { TraverseHit } from './src/repo/graph.ts';
 export type { DecayOptions } from './src/repo/forgetting.ts';

@@ -35,3 +35,29 @@ export type { DismissButtonProps, DismissButtonVariant } from './DismissButton.t
 // 디자인 목업 synapse-ui.jsx L425-443 1:1.
 export { HumbleRetraction, HumbleRetractionMotionTokens } from './HumbleRetraction.tsx';
 export type { HumbleRetractionProps } from './HumbleRetraction.tsx';
+
+// Sprint 7 (T3) — Empty / Error 4 화면 공통 컴포넌트.
+// 디자인 목업 진실원: screens.jsx `EmptyStateScreen` (line 296-360, state="empty"|"loading"|"error").
+// reason union 은 자가 선언 (D-S5 정합) — conversation T7 / mobile T6 가 동일 union 을 consumer 측에서 직접 박음.
+export {
+  EmptyState,
+  EmptyStateMotionTokens,
+  EMPTY_STATE_VARIANTS,
+  EMPTY_STATE_SCREENS,
+} from './EmptyState.tsx';
+export type {
+  EmptyStateProps,
+  EmptyStateVariant,
+  EmptyStateScreen,
+} from './EmptyState.tsx';
+
+export {
+  ErrorState,
+  ErrorStateMotionTokens,
+  ERROR_STATE_REASONS,
+} from './ErrorState.tsx';
+export type {
+  ErrorStateProps,
+  ErrorStateReason,
+  ErrorStateScreen,
+} from './ErrorState.tsx';

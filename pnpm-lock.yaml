@@ -29,6 +29,9 @@ importers:
       '@expo/metro-runtime':
         specifier: ~4.0.0
         version: 4.0.1(react-native@0.76.0(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1))
+      '@react-native-async-storage/async-storage':
+        specifier: ^3.0.2
+        version: 3.0.2(react-native@0.76.0(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1))(react@18.3.1)
       '@synapse/conversation':
         specifier: workspace:*
         version: link:../../packages/conversation
@@ -90,6 +93,27 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
+
+  e2e/scenarios:
+    dependencies:
+      '@synapse/conversation':
+        specifier: workspace:*
+        version: link:../../packages/conversation
+      '@synapse/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
+      '@synapse/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@synapse/orchestrator':
+        specifier: workspace:*
+        version: link:../../packages/orchestrator
+      '@synapse/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@synapse/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
 
   packages/conversation:
     dependencies:
@@ -171,6 +195,9 @@ importers:
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
+      '@synapse/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@types/node':
         specifier: ^22.7.5
         version: 22.19.17
@@ -217,6 +244,9 @@ importers:
       '@synapse/conversation':
         specifier: workspace:*
         version: link:../../../packages/conversation
+      '@synapse/design-system':
+        specifier: workspace:*
+        version: link:../../../packages/design-system
       '@synapse/engine':
         specifier: workspace:*
         version: link:../../../packages/engine
@@ -1148,6 +1178,12 @@ packages:
     resolution: {integrity: sha512-avutXAFL1ehGvAXtPquu0YK5oz6ctS474iM3vNGQIkswrVhdrS52e3uoMQBzZhNRAIE0jBnUyXWNmSjGHhCFcw==}
     peerDependencies:
       react: ^16.8 || ^17.0 || ^18.0
+
+  '@react-native-async-storage/async-storage@3.0.2':
+    resolution: {integrity: sha512-XP0zDIl+1XoeuQ7f878qXKdl77zLwzLALPpxvNRc7ZtDh9ew36WSvOdQOhFkexMySapFAWxEbZxS8K8J2DU4eg==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   '@react-native/assets-registry@0.76.0':
     resolution: {integrity: sha512-U8KLV+PC/cRIiDpb1VbeGuEfKq2riZZtNVLp1UOyKWfPbWWu8j6Fr95w7j+nglp41z70iBeF2OmCiVnRvtNklA==}
@@ -2324,6 +2360,9 @@ packages:
 
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
+
+  idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
@@ -5240,6 +5279,12 @@ snapshots:
       '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
       react: 18.3.1
 
+  '@react-native-async-storage/async-storage@3.0.2(react-native@0.76.0(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      idb: 8.0.3
+      react: 18.3.1
+      react-native: 0.76.0(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1)
+
   '@react-native/assets-registry@0.76.0': {}
 
   '@react-native/babel-plugin-codegen@0.76.0(@babel/preset-env@7.29.2(@babel/core@7.29.0))':
@@ -6686,6 +6731,8 @@ snapshots:
   human-signals@2.1.0: {}
 
   hyphenate-style-name@1.1.0: {}
+
+  idb@8.0.3: {}
 
   ieee754@1.2.1: {}
 

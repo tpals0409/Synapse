@@ -21,7 +21,7 @@ function makeRecorder(prunedReturn = 0): {
       calls.push({ kind: 'decay', conceptIds, penalty }),
     pruneEdgesBelow: (threshold) => {
       calls.push({ kind: 'prune', threshold });
-      return prunedReturn;
+      return { pruned: prunedReturn };
     },
   };
   const optsNoPrune: DismissOptions = {

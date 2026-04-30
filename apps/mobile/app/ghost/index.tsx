@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { colorsHex, copy, role, spacing } from '@synapse/design-system';
-import { GhostHint } from '@synapse/design-system/components';
+import { EmptyState, GhostHint } from '@synapse/design-system/components';
 import type { RecallLogRow } from '@synapse/protocol';
 import * as recallStore from '../../src/recallStore';
 
@@ -29,7 +29,17 @@ export default function GhostHintScreen() {
     <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
       <ChatHeader subtitle={c.recall.ghost.subtitle} />
       <View style={{ flex: 1, paddingTop: spacing.lg }}>
-        {row ? <GhostHint label={c.recall.ghost.title} /> : <SilentEmpty />}
+        {row ? (
+          // ghost-breathe + recall-emerge 모션은 GhostHint 컴포넌트가 자체 박음.
+          <GhostHint label={c.recall.ghost.title} />
+        ) : (
+          <EmptyState
+            screen="chat"
+            variant="empty"
+            title={c.firstChat.empty}
+            subtitle={c.firstChat.emptySub}
+          />
+        )}
       </View>
     </View>
   );
@@ -75,21 +85,3 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
   );
 }
 
-function SilentEmpty() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
-      <Text
-        style={{
-          fontFamily: role.meta,
-          fontSize: 10,
-          color: colorsHex.light.ink,
-          opacity: 0.32,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-        }}
-      >
-        silence
-      </Text>
-    </View>
-  );
-}

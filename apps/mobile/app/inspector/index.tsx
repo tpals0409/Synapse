@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { colorsHex, copy, role, spacing } from '@synapse/design-system';
 import {
+  EmptyState,
+  ErrorState,
   InspectorList,
   type InspectorRow,
 } from '@synapse/design-system/components';
@@ -40,21 +42,49 @@ function rowsFromDetail(details: RecallLogDetail[]): InspectorRow[] {
 }
 
 export default function InspectorScreen() {
-  const [rows, setRows] = useState<InspectorRow[]>(() =>
-    rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS)),
-  );
+  const [rows, setRows] = useState<InspectorRow[]>(() => {
+    try {
+      return rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS));
+    } catch {
+      return [];
+    }
+  });
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     return recallStore.subscribe(() => {
-      setRows(rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS)));
+      try {
+        setRows(rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS)));
+        setLoadError(false);
+      } catch {
+        setLoadError(true);
+      }
     });
   }, []);
 
+  // Sprint 7 (T6) — Empty/Error 라우팅. node-orbit + thread-draw + recall-emerge 모션은
+  // InspectorList / EmptyState (loading variant) 컴포넌트가 자체 박음.
   return (
     <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
       <Header count={rows.length} />
       <View style={{ flex: 1 }}>
-        {rows.length === 0 ? <Empty /> : <InspectorList rows={rows} />}
+        {loadError ? (
+          <ErrorState
+            screen="inspector"
+            reason="storage-failure"
+            title={c.firstChat.error}
+            subtitle={c.firstChat.errorSub}
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            screen="inspector"
+            variant="empty"
+            title={c.firstChat.empty}
+            subtitle={c.firstChat.emptySub}
+          />
+        ) : (
+          <InspectorList rows={rows} />
+        )}
       </View>
     </View>
   );
@@ -138,33 +168,3 @@ function Header({ count }: { count: number }) {
   );
 }
 
-function Empty() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
-      <Text
-        style={{
-          fontFamily: role.body,
-          fontSize: 17,
-          color: colorsHex.light.ink,
-          opacity: 0.55,
-          textAlign: 'center',
-        }}
-      >
-        {c.firstChat.empty}
-      </Text>
-      <Text
-        style={{
-          fontFamily: role.meta,
-          fontSize: 10,
-          color: colorsHex.light.ink,
-          opacity: 0.32,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-          marginTop: spacing.sm,
-        }}
-      >
-        {c.firstChat.emptySub}
-      </Text>
-    </View>
-  );
-}

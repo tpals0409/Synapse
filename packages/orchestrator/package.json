@@ -17,6 +17,7 @@
     "@synapse/engine": "workspace:*"
   },
   "devDependencies": {
+    "@synapse/storage": "workspace:*",
     "@types/node": "^22.7.5",
     "typescript": "^5.6.3"
   }

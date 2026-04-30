@@ -40,7 +40,25 @@
 //   - copy.{ko,en}.recall.retracted  — 디자인 목업 메시지 버블에 retracted 라벨 부재.
 //   목업 단일 진실원 헌법 (D-S4-design-system-single-copy-file) 정합 보장 위해 PM 결정 대기.
 //
-// (Hyper-Recall / Bridge / expand / collapse 등은 이후 스프린트 범위 — 의도적 제외.)
+// Sprint 7 (T4) 추가 — Hyper-Recall + 인터랙션 키 (디자인 목업 content.jsx 에 *이미 존재*, Sprint 7 에서 정규화 노출):
+//   COPY.ko.hyperLabel    → copy.ko.recall.hyper.title    ("과거와 현재가 만났습니다" / "Past meets present")
+//   COPY.ko.expand        → copy.ko.recall.expand         ("펼쳐 보기" / "Open")
+//   COPY.ko.collapse      → copy.ko.recall.collapse       ("접기" / "Close")
+//   COPY.ko.bridge        → copy.ko.recall.bridge         ("다리" / "bridge")
+//   COPY.ko.why           → copy.ko.recall.why            ("왜 떠올랐냐면" / "Why this surfaced")
+//   COPY.ko.sources       → copy.ko.recall.sources        ("연결된 기억" / "linked memories")
+//   COPY.ko.confidence    → copy.ko.recall.confidence     ("확신" / "confidence")
+//
+// **theme-toggle 카피는 디자인 목업 content.jsx 부재** → 카피 키 추가 0.
+//   목업 우선 헌법 (`feedback_mockup_truth.md`) + D-S4-design-system-single-copy-file 준수.
+//   mobile T5 의 themeStore UI 토글 라벨은 mobile 화면 단위 결정 (시스템 자동 디폴트).
+//   carry-over: 외부 사용자 테스트 후 토글 UI 가 필요해지면 디자인 목업 갱신 후 키 추가.
+//
+// **Empty/Error 4 화면 카피는 firstChat.* 재사용**:
+//   디자인 목업 content.jsx 의 empty/emptySub/error/errorSub/retry 는 1 세트만 존재.
+//   → EmptyState/ErrorState 컴포넌트가 호출자가 주입한 text/subtext 를 받음 (props).
+//   → 4 화면 (Onboarding/FirstChat/Inspector + Strong/Ghost) 이 동일 키 재사용 OR 화면별 직접 주입.
+//   → 키 추가 0. 컴포넌트 prop interface 로 유연성 확보.
 
 export interface OnboardingCopy {
   hi: string;
@@ -76,6 +94,16 @@ export interface RecallCopy {
   dismiss: string;
   never: string;
   humble: string;
+  // Sprint 7 (T4) — Hyper-Recall + 인터랙션 카피.
+  // 디자인 목업/content.jsx COPY.{hyperLabel, expand, collapse, bridge, why, sources, confidence} 1:1.
+  // hyper 는 ChatHeader 의 한 줄 (목업 ChatHeader 형식 정합) 을 포함.
+  hyper: RecallSurfaceCopy;
+  expand: string;
+  collapse: string;
+  bridge: string;
+  why: string;
+  sources: string;
+  confidence: string;
 }
 
 export interface CopyShape {
@@ -115,6 +143,14 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       dismiss: '지금은 됐어요',
       never: '다신 보지 않기',
       humble: '아, 잘못 연결했네요. 미안해요.',
+      // Sprint 7 (T4) — content.jsx COPY.hyperLabel + Hyper-Recall ChatHeader 정규화.
+      hyper: { title: '과거와 현재가 만났습니다', subtitle: 'Hyper-Recall · 레벨 4' },
+      expand: '펼쳐 보기',
+      collapse: '접기',
+      bridge: '다리',
+      why: '왜 떠올랐냐면',
+      sources: '연결된 기억',
+      confidence: '확신',
     },
   },
   en: {
@@ -145,6 +181,14 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       dismiss: 'Not now',
       never: 'Never again',
       humble: 'Ah — I connected the wrong thread. Sorry.',
+      // Sprint 7 (T4) — content.jsx COPY 영문 1:1.
+      hyper: { title: 'Past meets present', subtitle: 'hyper-recall · level 4' },
+      expand: 'Open',
+      collapse: 'Close',
+      bridge: 'bridge',
+      why: 'Why this surfaced',
+      sources: 'linked memories',
+      confidence: 'confidence',
     },
   },
 };

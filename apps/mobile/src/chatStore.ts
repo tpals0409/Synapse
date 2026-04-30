@@ -43,6 +43,7 @@ import {
 } from '@synapse/storage';
 import {
   sendStream as sendStreamNative,
+  type OnErrorFn,
   type RecallFn,
 } from '@synapse/conversation';
 import { recallCandidates } from '@synapse/engine';
@@ -52,6 +53,30 @@ import * as conceptStore from './conceptStore';
 import * as recallStore from './recallStore';
 
 let dbHandle: Database | null = null;
+
+// Sprint 7 (T6) — chatStore 외부 시그니처 동결 (sendStream / dismiss / listMessages 그대로).
+// 신규 export `subscribeError` *추기 only* — conversation.sendStream 의 onError DI 옵션
+// 을 chatStore 가 받아 모든 화면 (FirstChat 등) 에 전파. ErrorState reason 라우팅 입력.
+type ErrorReason = 'llm-failure' | 'storage-failure' | 'network-failure';
+type ErrorListener = (reason: ErrorReason) => void;
+const errorListeners = new Set<ErrorListener>();
+
+const emitError: OnErrorFn = (reason) => {
+  for (const l of errorListeners) {
+    try {
+      l(reason);
+    } catch {
+      // listener 실패는 흐름 격리 — 다른 listener / send 에 영향 0.
+    }
+  }
+};
+
+export function subscribeError(listener: ErrorListener): () => void {
+  errorListeners.add(listener);
+  return () => {
+    errorListeners.delete(listener);
+  };
+}
 
 function ensureDb(): Database {
   if (!dbHandle) {
@@ -142,6 +167,9 @@ export function sendStream(text: string): AsyncIterable<string> {
     prevAssistantMessageId: snapshot.prevAssistantMessageId,
     prevAssistantConceptIds: snapshot.prevAssistantConceptIds,
     prevRecallLogId: snapshot.prevRecallLogId,
+    // Sprint 7 (T6) — conversation T7 의 onError DI 입력. reason 분류된 실패 신호를
+    // chatStore emitter 로 전파 → subscribeError 구독 화면이 ErrorState mount.
+    onError: emitError,
   });
 
   // outer generator — inner 가 모두 yield 한 *후* listMessages 마지막 assistant id 를
@@ -186,7 +214,9 @@ export async function dismiss(
         }
       }
     },
-    pruneEdgesBelow: (threshold) => pruneEdgesBelow(db, threshold).pruned,
+    // Sprint 7 — orchestrator DI 시그니처 동결 (`{ pruned: number }` 객체 반환).
+    // storage.pruneEdgesBelow 가 같은 shape 을 직접 반환 → 그대로 위임.
+    pruneEdgesBelow: (threshold) => pruneEdgesBelow(db, threshold),
   });
 
   dismissedDecisionIds.add(decisionId);

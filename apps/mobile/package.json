@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.25.0",
-    "@expo/metro-runtime": "~4.0.0",
     "@expo-google-fonts/inter": "^0.2.3",
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo-google-fonts/source-serif-4": "^0.2.3",
+    "@expo/metro-runtime": "~4.0.0",
+    "@react-native-async-storage/async-storage": "^3.0.2",
     "@synapse/conversation": "workspace:*",
     "@synapse/design-system": "workspace:*",
     "@synapse/engine": "workspace:*",

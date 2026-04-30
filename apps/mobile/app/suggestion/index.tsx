@@ -10,7 +10,11 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { colorsHex, copy, role, spacing } from '@synapse/design-system';
-import { DismissButton, SuggestionCard } from '@synapse/design-system/components';
+import {
+  DismissButton,
+  EmptyState,
+  SuggestionCard,
+} from '@synapse/design-system/components';
 import type { RecallCandidate } from '@synapse/protocol';
 import * as chatStore from '../../src/chatStore';
 import * as recallStore from '../../src/recallStore';
@@ -52,6 +56,7 @@ export default function SuggestionScreen() {
       <View style={{ flex: 1, paddingTop: spacing.md }}>
         {mounted ? (
           <>
+            {/* recall-emerge + synapse-pulse 모션은 SuggestionCard 컴포넌트가 자체 박음. */}
             <SuggestionCard
               label={c.recall.suggestion.title}
               snippet={mounted.candidates[0]?.label}
@@ -61,7 +66,12 @@ export default function SuggestionScreen() {
             </View>
           </>
         ) : (
-          <SilentEmpty />
+          <EmptyState
+            screen="chat"
+            variant="empty"
+            title={c.firstChat.empty}
+            subtitle={c.firstChat.emptySub}
+          />
         )}
       </View>
     </View>
@@ -108,21 +118,3 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
   );
 }
 
-function SilentEmpty() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
-      <Text
-        style={{
-          fontFamily: role.meta,
-          fontSize: 10,
-          color: colorsHex.light.ink,
-          opacity: 0.32,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-        }}
-      >
-        silence
-      </Text>
-    </View>
-  );
-}

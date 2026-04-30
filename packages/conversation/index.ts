@@ -17,5 +17,6 @@ export type {
   RollbackCaptureFn,
   MarkDismissedFn,
   Logger,
+  OnErrorFn,
 } from './src/loop.ts';
 export { detectRetractionSignal } from './src/retraction.ts';

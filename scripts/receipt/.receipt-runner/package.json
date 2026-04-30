@@ -9,6 +9,7 @@
     "@synapse/engine": "workspace:*",
     "@synapse/orchestrator": "workspace:*",
     "@synapse/conversation": "workspace:*",
-    "@synapse/protocol": "workspace:*"
+    "@synapse/protocol": "workspace:*",
+    "@synapse/design-system": "workspace:*"
   }
 }

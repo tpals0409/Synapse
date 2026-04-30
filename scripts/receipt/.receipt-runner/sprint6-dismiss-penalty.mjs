@@ -74,7 +74,7 @@ const result = orchestrator.applyDismiss(recallLogId, conceptIds, {
       storage.decayEdgeWeight(db, ids[0], ids[1], penalty);
     }
   },
-  pruneEdgesBelow: (threshold) => storage.pruneEdgesBelow(db, threshold).pruned,
+  pruneEdgesBelow: (threshold) => storage.pruneEdgesBelow(db, threshold),
   // penalty / pruneThreshold 모두 default (0.5 / 0.05).
 });
 

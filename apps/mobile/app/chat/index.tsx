@@ -19,10 +19,20 @@ import {
   role,
   spacing,
 } from '@synapse/design-system';
-import { CaptureToast, HumbleRetraction } from '@synapse/design-system/components';
+import {
+  CaptureToast,
+  EmptyState as DSEmptyState,
+  ErrorState as DSErrorState,
+  HumbleRetraction,
+  type ErrorStateReason,
+} from '@synapse/design-system/components';
 import type { Message } from '@synapse/protocol';
 import type { Concept } from '@synapse/engine';
-import { listMessages, sendStream } from '../../src/chatStore';
+import {
+  listMessages,
+  sendStream,
+  subscribeError,
+} from '../../src/chatStore';
 import { subscribe as subscribeConcepts } from '../../src/conceptStore';
 
 const c = copy.ko;
@@ -30,9 +40,16 @@ const c = copy.ko;
 type DraftMessage = Message & { pending?: boolean };
 
 export default function FirstChat() {
-  const [messages, setMessages] = useState<DraftMessage[]>(() => listMessages());
+  const [messages, setMessages] = useState<DraftMessage[]>(() => {
+    try {
+      return listMessages();
+    } catch {
+      return [];
+    }
+  });
   const [draft, setDraft] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Sprint 7 (T6) — error state 가 reason union 으로 박힘. ErrorBanner string → ErrorState reason 라우팅.
+  const [errorReason, setErrorReason] = useState<ErrorStateReason | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [capturedConcepts, setCapturedConcepts] = useState<Concept[] | null>(null);
   const listRef = useRef<FlatList<DraftMessage> | null>(null);
@@ -51,11 +68,24 @@ export default function FirstChat() {
     });
   }, []);
 
+  // Sprint 7 (T6) — chatStore subscribeError → ErrorState reason 라우팅.
+  // conversation T7 의 onError DI 로부터 'llm-failure' / 'storage-failure' / 'network-failure'
+  // 분류된 reason 이 도달. 마지막 reason 우선 (덮어쓰기).
+  useEffect(() => {
+    return subscribeError((reason) => {
+      setErrorReason(reason);
+    });
+  }, []);
+
+  const retry = useCallback(() => {
+    setErrorReason(null);
+  }, []);
+
   const onSubmit = useCallback(async () => {
     const text = draft.trim();
     if (!text || streaming) return;
 
-    setError(null);
+    setErrorReason(null);
     setDraft('');
     setStreaming(true);
 
@@ -80,9 +110,10 @@ export default function FirstChat() {
       setMessages((prev) =>
         prev.map((m) => (m.id === placeholderId ? { ...m, pending: false, ts: Date.now() } : m)),
       );
-    } catch (e) {
+    } catch {
       setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
-      setError(e instanceof Error ? e.message : c.firstChat.error);
+      // chatStore.subscribeError 가 reason 분류된 신호를 별도로 전달 → fallback 으로 'llm-failure'.
+      setErrorReason((prev) => prev ?? 'llm-failure');
     } finally {
       setStreaming(false);
     }
@@ -97,8 +128,25 @@ export default function FirstChat() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ChatHeader />
-        {data.length === 0 ? (
-          <EmptyState />
+        {/* Sprint 7 (T6) — Empty/Error 라우팅. errorReason 우선 (try/catch 분기 → ErrorState reason),
+            그 다음 rows.length === 0 → EmptyState, 마지막 본 화면. ink-rise 모션은 design-system
+            EmptyState/ErrorState 가 자체 박음. */}
+        {errorReason ? (
+          <DSErrorState
+            screen="chat"
+            reason={errorReason}
+            title={c.firstChat.error}
+            subtitle={c.firstChat.errorSub}
+            retryLabel={c.firstChat.retry}
+            onRetry={retry}
+          />
+        ) : data.length === 0 ? (
+          <DSEmptyState
+            screen="chat"
+            variant="empty"
+            title={c.firstChat.empty}
+            subtitle={c.firstChat.emptySub}
+          />
         ) : (
           <FlatList
             ref={listRef}
@@ -118,7 +166,6 @@ export default function FirstChat() {
             }
           />
         )}
-        {error && <ErrorBanner message={error} />}
         <Composer
           value={draft}
           onChangeText={setDraft}
@@ -201,74 +248,6 @@ function ChatHeader() {
           첫 대화
         </Text>
       </View>
-    </View>
-  );
-}
-
-function EmptyState() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
-      <Text
-        style={{
-          fontFamily: role.body,
-          fontSize: 17,
-          color: colorsHex.light.ink,
-          opacity: 0.55,
-          textAlign: 'center',
-        }}
-      >
-        {c.firstChat.empty}
-      </Text>
-      <Text
-        style={{
-          fontFamily: role.meta,
-          fontSize: 10,
-          color: colorsHex.light.ink,
-          opacity: 0.32,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-          marginTop: spacing.sm,
-        }}
-      >
-        {c.firstChat.emptySub}
-      </Text>
-    </View>
-  );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <View
-      style={{
-        marginHorizontal: 16,
-        marginBottom: spacing.sm,
-        padding: spacing.md,
-        borderRadius: radius.md,
-        backgroundColor: colorsHex.light.ink,
-        opacity: 0.9,
-      }}
-    >
-      <Text
-        style={{
-          fontFamily: role.meta,
-          fontSize: 10,
-          color: colorsHex.light.synapse,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-        }}
-      >
-        {c.firstChat.error}
-      </Text>
-      <Text
-        style={{
-          fontFamily: role.body,
-          fontSize: 13,
-          color: colorsHex.light.paper,
-          marginTop: 2,
-        }}
-      >
-        {message}
-      </Text>
     </View>
   );
 }
@@ -469,7 +448,9 @@ function Composer({
           multiline
           editable={!disabled}
           onSubmitEditing={onSubmit}
-          blurOnSubmit={false}
+          // RN 0.72+: blurOnSubmit deprecated → submitBehavior. multiline TextInput 의 enter
+          // 가 blur 안 하고 send 만 발생하도록 'submit' (D-S7-mobile-blurOnSubmit-deprecated).
+          submitBehavior="submit"
           returnKeyType="send"
           style={{
             fontFamily: role.body,

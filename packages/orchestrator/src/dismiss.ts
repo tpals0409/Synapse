@@ -16,10 +16,15 @@ import type { DecisionAct } from './types.ts';
 // idempotent — 같은 decisionId 두 번 호출 시 markDismissed 는 같은 값을 set, decayEdges 는 누적
 // (호출자가 누적 회수를 원할 때만 두 번 호출하는 계약).
 
+// [DIRECTIVE D-S7-orchestrator-pruneEdges-signature-mismatch]
+// pruneEdgesBelow DI 시그니처 = `(threshold) => { pruned: number }` — storage SoT (헌법 #1).
+// Sprint 6 의 `=> number` narrow 는 storage truth 와 mismatch 였음 — storage forgetting.ts:61
+// `pruneEdgesBelow(db, threshold): { pruned: number }` 그대로 정합. mock + 실어댑터 양쪽
+// extraction (`.pruned`) 이 사라져 wiring 비용 0.
 export type DismissOptions = {
   markDismissed: (recallLogId: string, conceptIds: string[]) => void;
   decayEdges: (conceptIds: string[], penalty: number) => void;
-  pruneEdgesBelow?: (threshold: number) => number;
+  pruneEdgesBelow?: (threshold: number) => { pruned: number };
   penalty?: number;
   pruneThreshold?: number;
 };
@@ -50,7 +55,7 @@ export function applyDismiss(
 
   let pruned = 0;
   if (opts.pruneEdgesBelow !== undefined) {
-    pruned = opts.pruneEdgesBelow(pruneThreshold);
+    pruned = opts.pruneEdgesBelow(pruneThreshold).pruned;
   }
 
   return { decayed, pruned };

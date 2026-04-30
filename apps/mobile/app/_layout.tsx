@@ -16,6 +16,7 @@ import {
   JetBrainsMono_500Medium,
 } from '@expo-google-fonts/jetbrains-mono';
 import { fonts } from '@synapse/design-system';
+import { ThemeProvider } from '../src/themeStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // splash 가 이미 숨겨졌거나 web 에서 미지원이면 무시.
@@ -44,5 +45,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  // Sprint 7 (T5) — ThemeProvider 가 모든 화면 위에 mount.
+  // useTheme() 으로 effectiveTheme + colors/colorsHex 분기 (T6 wiring 시 화면 마이그레이션).
+  return (
+    <ThemeProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </ThemeProvider>
+  );
 }

@@ -13,7 +13,7 @@
 // design-system 자기 자신의 카피 진실원 매칭은 자기 패키지에서 검증하는 게 자연스럽고,
 // 상대 import (`../index.ts`) 로 self-import 회피.
 //
-// 검증 키 (Sprint 1 6 + Sprint 3 2 + Sprint 4 5 + Sprint 6 3 = 16):
+// 검증 키 (Sprint 1 6 + Sprint 3 2 + Sprint 4 5 + Sprint 6 3 + Sprint 7 7 = 23):
 //   Sprint 1:
 //     COPY.ko.onboard.hi    ↔ copy.ko.onboarding.hi       ("안녕하세요.")
 //     COPY.ko.onboard.sub   ↔ copy.ko.onboarding.sub      ("그냥 이야기해보세요...")
@@ -34,6 +34,14 @@
 //     COPY.ko.dismiss   ↔ copy.ko.recall.dismiss   ("지금은 됐어요" / Suggestion 의 dismissText 진실원)
 //     COPY.ko.never     ↔ copy.ko.recall.never     ("다신 보지 않기")
 //     COPY.ko.humble    ↔ copy.ko.recall.humble    ("아, 잘못 연결했네요. 미안해요." / HumbleRetraction 본문)
+//   Sprint 7 (T4 — Hyper-Recall + 인터랙션 카피):
+//     COPY.ko.hyperLabel  ↔ copy.ko.recall.hyper.title    ("과거와 현재가 만났습니다")
+//     COPY.ko.expand      ↔ copy.ko.recall.expand         ("펼쳐 보기")
+//     COPY.ko.collapse    ↔ copy.ko.recall.collapse       ("접기")
+//     COPY.ko.bridge      ↔ copy.ko.recall.bridge         ("다리")
+//     COPY.ko.why         ↔ copy.ko.recall.why            ("왜 떠올랐냐면")
+//     COPY.ko.sources     ↔ copy.ko.recall.sources        ("연결된 기억")
+//     COPY.ko.confidence  ↔ copy.ko.recall.confidence     ("확신")
 //
 // (T4/T6 가 의도적으로 키 네임스페이스를 정리한 부분 — `onboard.*` → `onboarding.*`,
 //  flat `placeholder/captured/capturedSub` → `firstChat.*`,
@@ -81,6 +89,14 @@ const checks = [
   ['dismiss', ko.recall.dismiss],
   ['never', ko.recall.never],
   ['humble', ko.recall.humble],
+  // Sprint 7 (T4) — Hyper-Recall + 인터랙션 카피 (디자인 목업 content.jsx 미매핑 키 정규화).
+  ['hyperLabel', ko.recall.hyper.title],
+  ['expand', ko.recall.expand],
+  ['collapse', ko.recall.collapse],
+  ['bridge', ko.recall.bridge],
+  ['why', ko.recall.why],
+  ['sources', ko.recall.sources],
+  ['confidence', ko.recall.confidence],
 ];
 
 let okCount = 0;

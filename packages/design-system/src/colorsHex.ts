@@ -9,18 +9,31 @@
 //   dark.paper / dark.ink — styles.css [data-theme="dark"] 의 oklch 정확 변환.
 //   dark.synapse — styles.css 가 [data-theme="dark"] 에서 --synapse 를 재정의하지 않으므로
 //                  light 와 동일 (carry-over §3 절대 규칙).
+//
+// [DIRECTIVE v2026-04-30 D-S7-designer-tokens-widen-color-tokens] (Sprint 7, T2 보강) —
+// `ColorTokensHex` wider type alias 추가 + `as const satisfies ColorTokensHex` 패턴.
+//   — mobile T5 themeStore 가 `colorsHex[effectiveTheme]` swap 시 cast 없이 할당 가능.
+//   — literal 정확성 (#F5F0E8 등 raw hex) 보존: `as const` 가 literal 유지, `satisfies` 가
+//     wider 형태 검증만 추가.
+//   — TS 4.9+ 표준. 기존 export 식별자 (colorsHex / ColorHexTheme / ColorHexToken) 변경 0.
+
+export type ColorTokensHex = {
+  readonly paper: string;
+  readonly ink: string;
+  readonly synapse: string;
+};
 
 export const colorsHex = {
   light: {
     paper: '#F5F0E8',
     ink: '#2A2620',
     synapse: '#CB7229',
-  },
+  } as const satisfies ColorTokensHex,
   dark: {
     paper: '#1A1511',
     ink: '#F1EAE3',
     synapse: '#CB7229',
-  },
+  } as const satisfies ColorTokensHex,
 } as const;
 
 export type ColorHexTheme = keyof typeof colorsHex;

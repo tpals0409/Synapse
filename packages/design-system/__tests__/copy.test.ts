@@ -123,3 +123,52 @@ test('copy: recall.{dismiss,never,humble} 모두 비어있지 않은 string (Spr
     }
   }
 });
+
+// Sprint 7 (T4) — Hyper-Recall + 인터랙션 카피 1:1 (디자인 목업 content.jsx COPY 정합).
+test('copy.ko.recall.hyper 1:1 with 디자인 목업 COPY.hyperLabel + ChatHeader 정규화 (Sprint 7)', () => {
+  assert.equal(copy.ko.recall.hyper.title, '과거와 현재가 만났습니다');
+  assert.equal(copy.ko.recall.hyper.subtitle, 'Hyper-Recall · 레벨 4');
+});
+
+test('copy.en.recall.hyper 1:1 with 디자인 목업 COPY.hyperLabel (Sprint 7)', () => {
+  assert.equal(copy.en.recall.hyper.title, 'Past meets present');
+  assert.equal(copy.en.recall.hyper.subtitle, 'hyper-recall · level 4');
+});
+
+test('copy.ko.recall.{expand,collapse,bridge,why,sources,confidence} 1:1 with 디자인 목업 COPY (Sprint 7)', () => {
+  assert.equal(copy.ko.recall.expand, '펼쳐 보기');
+  assert.equal(copy.ko.recall.collapse, '접기');
+  assert.equal(copy.ko.recall.bridge, '다리');
+  assert.equal(copy.ko.recall.why, '왜 떠올랐냐면');
+  assert.equal(copy.ko.recall.sources, '연결된 기억');
+  assert.equal(copy.ko.recall.confidence, '확신');
+});
+
+test('copy.en.recall.{expand,collapse,bridge,why,sources,confidence} 1:1 with 디자인 목업 COPY (Sprint 7)', () => {
+  assert.equal(copy.en.recall.expand, 'Open');
+  assert.equal(copy.en.recall.collapse, 'Close');
+  assert.equal(copy.en.recall.bridge, 'bridge');
+  assert.equal(copy.en.recall.why, 'Why this surfaced');
+  assert.equal(copy.en.recall.sources, 'linked memories');
+  assert.equal(copy.en.recall.confidence, 'confidence');
+});
+
+test('copy: recall.hyper 가 RecallSurfaceCopy 형태 (title + subtitle, Sprint 7)', () => {
+  for (const lang of ['ko', 'en'] as const) {
+    const v = copy[lang].recall.hyper;
+    assert.equal(typeof v.title, 'string');
+    assert.equal(typeof v.subtitle, 'string');
+    assert.ok(v.title.length > 0);
+    assert.ok(v.subtitle.length > 0);
+  }
+});
+
+test('copy: 신규 7 키 (Sprint 7) 모두 비어있지 않은 string', () => {
+  for (const lang of ['ko', 'en'] as const) {
+    for (const k of ['expand', 'collapse', 'bridge', 'why', 'sources', 'confidence'] as const) {
+      const v = copy[lang].recall[k];
+      assert.equal(typeof v, 'string', `${lang}.recall.${k}`);
+      assert.ok(v.length > 0, `${lang}.recall.${k} non-empty`);
+    }
+  }
+});

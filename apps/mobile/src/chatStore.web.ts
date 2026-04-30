@@ -30,6 +30,20 @@ import * as recallStore from './recallStore';
 
 const dismissedDecisionIds = new Set<string>();
 
+// Sprint 7 (T6) — chatStore.web 짝 parity. 본 web 어댑터는 demo 모드에서 실제 throw 가
+// 발생하지 않지만, FirstChat 화면이 동일 import 경로로 subscribeError 를 호출 가능해야 함.
+// listener 등록만 받고 emit 0 (demo 는 항상 성공). 시그니처 동결 정합.
+type ErrorReason = 'llm-failure' | 'storage-failure' | 'network-failure';
+type ErrorListener = (reason: ErrorReason) => void;
+const errorListeners = new Set<ErrorListener>();
+
+export function subscribeError(listener: ErrorListener): () => void {
+  errorListeners.add(listener);
+  return () => {
+    errorListeners.delete(listener);
+  };
+}
+
 const memory: Message[] = [];
 
 export function listMessages(): Message[] {

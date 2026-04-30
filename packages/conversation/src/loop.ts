@@ -33,6 +33,10 @@ import { detectRetractionSignal as defaultDetectRetraction } from './retraction.
 export type SendDeps = {
   db: Database;
   complete?: (prompt: string) => Promise<string>;
+  /** Sprint 7 — failure reason callback. 시그니처 동결: 기존 send 동작 변경 0. */
+  onError?: OnErrorFn;
+  /** Where hook failures land. Default `console`. */
+  logger?: Logger;
 };
 
 type CompleteJsonFn = (opts: {
@@ -64,6 +68,23 @@ export type BuildEdgesFn = (
 ) => Promise<GraphEdge[]>;
 
 export type Logger = { warn: (...args: unknown[]) => void };
+
+/**
+ * Sprint 7 — LLM/storage 실패 reason callback DI ([FROZEN D-S7-conversation-onerror-signature]).
+ *
+ * - `'llm-failure'`: LLM `complete` / `completeStream` 가 throw 또는 stream 도중 throw.
+ * - `'storage-failure'`: `appendMessage` (user 또는 assistant) 가 throw.
+ * - `'network-failure'`: 호출자가 명시적으로 라우팅하는 reason (예: web fetch). loop 내부에서는
+ *   분류 하지 않고 enum 만 노출 — mobile chatStore 가 LLM 어댑터 외부 네트워크 오류 시 직접 호출.
+ *
+ * 시그니처 동결: 기존 `send` / `sendStream` 동작은 변경 0 — 신규 onError 옵션만 추기.
+ * 콜백 호출 후 원래 throw 경로는 그대로 보존 (`loop.test.ts:30`, `loop-stream.test.ts:39` contract).
+ * 콜백 자체가 throw 해도 원 에러 propagation 을 막지 않도록 try/catch + logger.warn 격리
+ * (Sprint 6 retraction hook 패턴 답습).
+ */
+export type OnErrorFn = (
+  reason: 'llm-failure' | 'storage-failure' | 'network-failure',
+) => void;
 
 export type MemoryFormationDeps = {
   /** Override Concept extraction. Default: `@synapse/engine`'s `extractConcepts`. */
@@ -183,30 +204,54 @@ export type RetractionHookDeps = {
 export type SendStreamDeps = {
   db: Database;
   completeStream?: (prompt: string) => AsyncIterable<string>;
+  /** Sprint 7 — failure reason callback. 시그니처 동결: 기존 sendStream 동작 변경 0. */
+  onError?: OnErrorFn;
 } & MemoryFormationDeps &
   RecallHookDeps &
   RetractionHookDeps;
 
 export async function send(text: string, deps: SendDeps): Promise<string> {
   const complete = deps.complete ?? gemma.complete;
+  const logger: Logger = deps.logger ?? console;
 
+  // [FROZEN v2026-04-30 D-S7-conversation-send-ts-monotonic] — same-ms race fix.
+  // mock complete (0ms) 일 때 ts0 == ts1 → listMessages secondary `id ASC` tie-break (Sprint 6
+  // [FROZEN D-S6-storage-listMessages-retracted]) 가 uuid 로 user/assistant 50% 역전. monotonic
+  // 보장 (ts1 ≥ ts0+1) 으로 차단. sendStream 은 LLM streaming 자연 분리로 race 0 — 변경 X.
+  const ts0 = Date.now();
   const userMsg: Message = {
     id: crypto.randomUUID(),
     role: 'user',
     content: text,
-    ts: Date.now(),
+    ts: ts0,
   };
-  appendMessage(deps.db, userMsg);
+  try {
+    appendMessage(deps.db, userMsg);
+  } catch (err) {
+    emitError(deps.onError, 'storage-failure', logger, err);
+    throw err;
+  }
 
-  const reply = await complete(text);
+  let reply: string;
+  try {
+    reply = await complete(text);
+  } catch (err) {
+    emitError(deps.onError, 'llm-failure', logger, err);
+    throw err;
+  }
 
   const asstMsg: Message = {
     id: crypto.randomUUID(),
     role: 'assistant',
     content: reply,
-    ts: Date.now(),
+    ts: Math.max(Date.now(), ts0 + 1),
   };
-  appendMessage(deps.db, asstMsg);
+  try {
+    appendMessage(deps.db, asstMsg);
+  } catch (err) {
+    emitError(deps.onError, 'storage-failure', logger, err);
+    throw err;
+  }
 
   return reply;
 }
@@ -225,7 +270,12 @@ export async function* sendStream(
     content: text,
     ts: ts0,
   };
-  appendMessage(deps.db, userMsg);
+  try {
+    appendMessage(deps.db, userMsg);
+  } catch (err) {
+    emitError(deps.onError, 'storage-failure', logger, err);
+    throw err;
+  }
 
   // Sprint 6 Humble Retraction hook — user append 직후 + Recall hook *전*.
   // 부정 신호 hit 시 직전 assistant 메시지 회수 + capture rollback. fire-and-forget; 실패는
@@ -247,12 +297,21 @@ export async function* sendStream(
   });
 
   let acc = '';
-  for await (const chunk of completeStream(text)) {
-    acc += chunk;
-    yield chunk;
+  try {
+    for await (const chunk of completeStream(text)) {
+      acc += chunk;
+      yield chunk;
+    }
+  } catch (err) {
+    emitError(deps.onError, 'llm-failure', logger, err);
+    throw err;
   }
 
-  const ts1 = Date.now();
+  // [FROZEN v2026-04-30 D-S7-conversation-send-ts-monotonic] scope 확장 (자가 RESUME, SoT
+  // 헌법 #1 — code 가 진실): mock completeStream (즉시 yield) 일 때 ts0 == ts1 → listMessages
+  // `id ASC` tie-break race 가 sendStream 에서도 reproduce (50회 중 20회 실패). monotonic 보장.
+  // 실측 latency (≥15ms sleep) 에는 영향 0 — 동일 ms 일 때만 +1 강제.
+  const ts1 = Math.max(Date.now(), ts0 + 1);
   const asstMsg: Message = {
     id: crypto.randomUUID(),
     role: 'assistant',
@@ -260,7 +319,12 @@ export async function* sendStream(
     ts: ts1,
     latency_ms: ts1 - ts0,
   };
-  appendMessage(deps.db, asstMsg);
+  try {
+    appendMessage(deps.db, asstMsg);
+  } catch (err) {
+    emitError(deps.onError, 'storage-failure', logger, err);
+    throw err;
+  }
 
   // Sprint 3 memory-formation hook — fire-and-forget; failures are logged, never surface to user.
   void runMemoryFormation(text, deps).catch((err) => {
@@ -269,6 +333,23 @@ export async function* sendStream(
 }
 
 const DEFAULT_RECENT_WINDOW_MS = 60_000;
+
+// Sprint 7 — onError DI emit. 콜백 자체가 throw 해도 원 에러 propagation 을 막지 않도록
+// try/catch + logger.warn 격리 (Sprint 6 retraction hook 패턴 답습).
+function emitError(
+  onError: OnErrorFn | undefined,
+  reason: 'llm-failure' | 'storage-failure' | 'network-failure',
+  logger: Logger,
+  cause: unknown,
+): void {
+  logger.warn(`synapse/conversation: ${reason}`, cause);
+  if (!onError) return;
+  try {
+    onError(reason);
+  } catch (cbErr) {
+    logger.warn('synapse/conversation: onError callback failed', cbErr);
+  }
+}
 
 // Sprint 6 — Humble Retraction.
 // 호출 위치 = sendStream 의 user msg append 직후 + Recall hook 전. 동기 (storage repo 함수가 동기).

@@ -170,7 +170,7 @@ test('recallCandidates Sprint 5: 합집합 hyperTraverse 주입 시 bridge candi
     embed,
     nearest,
     hyperTraverse: async () => [],
-    bridge: async (seedId) => [
+    bridge: async () => [
       {
         conceptId: 'far',
         label: '먼개념',
@@ -247,8 +247,6 @@ test('recallCandidates Sprint 5: 같은 conceptId 가 semantic + bridge 모두 h
 });
 
 // ── Sprint 6: forgetting decay + dismiss penalty (D-S6-engine-recall-forgetting-dismiss) ──
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 test('recallCandidates Sprint 6: recordTouch DI 호출 — semantic hit conceptId 마다 1회', async () => {
   const nearest: NearestRecallFn = async () => [

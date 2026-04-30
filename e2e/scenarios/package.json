@@ -1,0 +1,19 @@
+{
+  "name": "@synapse/e2e-scenarios",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sprint 7 — e2e 종단 시나리오 (full-journey 등). 워크스페이스로 등록하여 @synapse/* alias resolve.",
+  "scripts": {
+    "test": "node --test --experimental-strip-types *.spec.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@synapse/protocol": "workspace:*",
+    "@synapse/storage": "workspace:*",
+    "@synapse/engine": "workspace:*",
+    "@synapse/orchestrator": "workspace:*",
+    "@synapse/conversation": "workspace:*",
+    "@synapse/design-system": "workspace:*"
+  }
+}
