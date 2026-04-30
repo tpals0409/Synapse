@@ -34,6 +34,11 @@ import {
   subscribeError,
 } from '../../src/chatStore';
 import { subscribe as subscribeConcepts } from '../../src/conceptStore';
+// Sprint 8 (T5) — telemetry emit + 만족도 설문 UI control.
+// chatStore subscribeError / chatStore.sendStream 흐름 정합 — emit 은 turn 직후 (decide ack 시점).
+// Sprint 4 의 recallStore.subscribe 도 turn 마다 push 되므로 그곳에서도 emit 가능 (recall event).
+import * as telemetry from '../../src/telemetryStore';
+import { subscribe as subscribeRecall } from '../../src/recallStore';
 
 const c = copy.ko;
 
@@ -53,6 +58,10 @@ export default function FirstChat() {
   const [streaming, setStreaming] = useState(false);
   const [capturedConcepts, setCapturedConcepts] = useState<Concept[] | null>(null);
   const listRef = useRef<FlatList<DraftMessage> | null>(null);
+  // Sprint 8 (T5) — 만족도 설문 overlay state. turn count 는 user 발화 횟수 (assistant 제외).
+  // mid-session: turn === 5 도달 시 overlay mount 1회. end-session: 본 sprint 미구현 (Open Issue).
+  const [surveyOpen, setSurveyOpen] = useState<'mid' | 'end' | null>(null);
+  const turnCountRef = useRef(0);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -77,6 +86,20 @@ export default function FirstChat() {
     });
   }, []);
 
+  // Sprint 8 (T5) — recall event emit. recallStore.subscribe 가 push 마다 row 전달 →
+  // telemetry 'recall' event 로 변환. orchestrator 의 4-원 act (silence/ghost/suggestion/strong)
+  // 그대로 boundary 통과. dev doc §4 Architecture Data Flow 의 recall_log 기존 row 활용 정합.
+  useEffect(() => {
+    return subscribeRecall((row) => {
+      telemetry.emit({
+        event: 'recall',
+        recallLogId: row.id,
+        act: row.act,
+        ts: Date.now(),
+      });
+    });
+  }, []);
+
   const retry = useCallback(() => {
     setErrorReason(null);
   }, []);
@@ -88,6 +111,21 @@ export default function FirstChat() {
     setErrorReason(null);
     setDraft('');
     setStreaming(true);
+
+    // Sprint 8 (T5) — turn count 증가 + decision 'send' event emit.
+    // mid-session 만족도 설문 trigger 는 turn count *증가 후* 평가 (5 번째 user 발화 직후 mount).
+    turnCountRef.current += 1;
+    telemetry.emit({
+      event: 'decision',
+      actor: 'mobile',
+      action: 'send',
+      ts: Date.now(),
+      payload: JSON.stringify({ turn: turnCountRef.current }),
+    });
+    if (telemetry.shouldShowMidSessionSurvey(turnCountRef.current)) {
+      telemetry.markSurveyShown('mid');
+      setSurveyOpen('mid');
+    }
 
     const ts0 = Date.now();
     const userId = makeId();
@@ -173,6 +211,215 @@ export default function FirstChat() {
           disabled={streaming}
         />
       </KeyboardAvoidingView>
+      {/* Sprint 8 (T5) — 만족도 설문 overlay (chat 화면 위 floating). mid-session 5 turn 도달 시
+          mount. 디자인 목업 부재 → mobile inline 카피 (D-S4-design-system-single-copy-file 정합 —
+          별도 copy.ts 키 추가 0). 외부 데이터 수집 후 designer T9/T10 분기로 키 추가 검토. */}
+      {surveyOpen ? (
+        <SatisfactionSurveyOverlay
+          marker={surveyOpen}
+          onSubmit={(score, comment) => {
+            telemetry.emit({
+              event: 'satisfaction',
+              score,
+              comment,
+              sessionMarker: surveyOpen,
+              ts: Date.now(),
+            });
+            setSurveyOpen(null);
+          }}
+          onDismiss={() => setSurveyOpen(null)}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+// Sprint 8 (T5) — 만족도 설문 overlay. chat 화면 floating panel.
+//
+// 디자인 의도 (디자인 목업 부재 → 디자인 톤 보존):
+// - 배경: ink @ 35% alpha (목업 modal/overlay 패턴 정합).
+// - 카드: paper 배경 + radius.lg + ink 0.5px border (목업 카드 패턴 정합).
+// - 점수 5단: pill 버튼 5개 (1~5).
+// - 텍스트: 디자인 목업 부재 → 한국어 inline (외부 사용자 한국어 1차 가정 정합).
+//
+// 카피 *값* 은 디자인 목업/content.jsx 의 ko/en 1:1 정합이 아닌 상태 — 단일 진실원 헌법
+// (D-S4-design-system-single-copy-file) 위반 회피 위해 inline 으로 박음. carry-over 8
+// (4 화면 별 Empty/Error 카피) 분기와 같은 *외부 데이터 수집 후 갱신* 패턴.
+function SatisfactionSurveyOverlay({
+  marker,
+  onSubmit,
+  onDismiss,
+}: {
+  marker: 'mid' | 'end';
+  onSubmit: (score: 1 | 2 | 3 | 4 | 5, comment?: string) => void;
+  onDismiss: () => void;
+}) {
+  const [score, setScore] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [comment, setComment] = useState('');
+  const title = marker === 'mid' ? '잠깐, 어땠어요?' : '오늘 대화는 어땠어요?';
+  const subtitle = '1점(아쉬워요) ~ 5점(좋아요)';
+  return (
+    <View
+      pointerEvents="auto"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: colorsHex.light.ink,
+        opacity: 0.999,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      {/* 배경 dim — ink @ 0.35 alpha 효과를 별도 View 로 (RN 은 backgroundColor alpha 직접 가능). */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.35)',
+        }}
+      />
+      <View
+        accessibilityRole="alert"
+        accessibilityLabel={title}
+        style={{
+          backgroundColor: colorsHex.light.paper,
+          borderRadius: radius.lg,
+          borderWidth: 0.5,
+          borderColor: colorsHex.light.ink,
+          paddingHorizontal: spacing.lg,
+          paddingVertical: spacing.lg,
+          width: '82%',
+          maxWidth: 340,
+          gap: spacing.sm,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: role.heading,
+            fontSize: 18,
+            fontWeight: '600',
+            color: colorsHex.light.ink,
+            letterSpacing: -0.2,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontFamily: role.meta,
+            fontSize: 11.5,
+            color: colorsHex.light.ink,
+            opacity: 0.55,
+          }}
+        >
+          {subtitle}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.xs }}>
+          {([1, 2, 3, 4, 5] as const).map((s) => {
+            const selected = score === s;
+            return (
+              <Pressable
+                key={s}
+                accessibilityRole="button"
+                accessibilityLabel={`${s}점`}
+                onPress={() => setScore(s)}
+                style={{
+                  flex: 1,
+                  height: 38,
+                  borderRadius: radius.pill,
+                  borderWidth: 0.5,
+                  borderColor: colorsHex.light.ink,
+                  backgroundColor: selected ? colorsHex.light.synapse : colorsHex.light.paper,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: role.ui,
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: selected ? colorsHex.light.paper : colorsHex.light.ink,
+                  }}
+                >
+                  {s}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <TextInput
+          value={comment}
+          onChangeText={setComment}
+          placeholder="자유 코멘트 (선택)"
+          placeholderTextColor={colorsHex.light.ink}
+          multiline
+          style={{
+            marginTop: spacing.sm,
+            minHeight: 56,
+            maxHeight: 120,
+            borderWidth: 0.5,
+            borderColor: colorsHex.light.ink,
+            borderRadius: radius.md,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            fontFamily: role.body,
+            fontSize: 14,
+            color: colorsHex.light.ink,
+          }}
+        />
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.sm, justifyContent: 'flex-end' }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="다음에"
+            onPress={onDismiss}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: radius.pill,
+              borderWidth: 0.5,
+              borderColor: colorsHex.light.ink,
+            }}
+          >
+            <Text style={{ fontFamily: role.ui, fontSize: 13, color: colorsHex.light.ink }}>다음에</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="보내기"
+            disabled={score === null}
+            onPress={() => {
+              if (score === null) return;
+              onSubmit(score, comment.trim() ? comment.trim() : undefined);
+            }}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: radius.pill,
+              backgroundColor: score === null ? colorsHex.light.paper : colorsHex.light.synapse,
+              borderWidth: score === null ? 0.5 : 0,
+              borderColor: colorsHex.light.ink,
+              opacity: score === null ? 0.5 : 1,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: role.ui,
+                fontSize: 13,
+                fontWeight: '600',
+                color: score === null ? colorsHex.light.ink : colorsHex.light.paper,
+              }}
+            >
+              보내기
+            </Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }

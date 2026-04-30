@@ -11,3 +11,8 @@ export type {
   DecideContext,
 } from './src/recall.ts';
 export type { Concept, GraphEdge, EdgeKind } from './src/concept.ts';
+export type {
+  DecisionLogActor,
+  DecisionLogAction,
+  SatisfactionSessionMarker,
+} from './src/decisionLog.ts';

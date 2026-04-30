@@ -56,3 +56,15 @@ export type {
   TemporalCandidatesOptions,
   DomainCrossingCandidatesOptions,
 } from './src/hyperRecall.ts';
+// Sprint 8 T6 — Concept dedup / alias merge (carry-over 9 분기). T8 PASS 후 채택/보류 결정.
+export {
+  dedupConcepts,
+  DEFAULT_DEDUP_EMBED_THRESHOLD,
+} from './src/dedupConcepts.ts';
+export type {
+  DedupOptions,
+  DedupConceptInput,
+  MergePlan,
+  EmbedSimilarityFn,
+  NormalizeLabelFn,
+} from './src/dedupConcepts.ts';

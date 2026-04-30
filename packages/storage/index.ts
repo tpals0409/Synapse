@@ -13,6 +13,16 @@ export {
 } from './src/repo/forgetting.ts';
 export { markRetracted, rollbackCaptureForTurn } from './src/repo/retraction.ts';
 export { markDismissed, decayEdgeWeight } from './src/repo/dismiss.ts';
+export { appendDecisionLog, listDecisionLog } from './src/repo/decisionLog.ts';
+export type { DecisionLogRow, ListDecisionLogOptions } from './src/repo/decisionLog.ts';
+export {
+  appendSatisfactionSurvey,
+  listSatisfactionSurveys,
+} from './src/repo/satisfactionSurvey.ts';
+export type {
+  SatisfactionSurveyRow,
+  ListSatisfactionSurveysOptions,
+} from './src/repo/satisfactionSurvey.ts';
 export { seedFullJourney } from './src/repo/seedFullJourney.ts';
 export type { FullJourneyFixture } from './src/repo/seedFullJourney.ts';
 export type { NearestConcept } from './src/repo/embed.ts';

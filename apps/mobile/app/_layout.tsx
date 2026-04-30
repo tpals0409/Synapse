@@ -17,6 +17,10 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import { fonts } from '@synapse/design-system';
 import { ThemeProvider } from '../src/themeStore';
+// Sprint 8 (T5) — telemetryStore 모듈 import 시 자동 초기화 (모듈 scope state).
+// recallStore 와 동일 패턴 — 별도 Provider 컴포넌트 mount 없이 모든 화면이 공통 사용.
+// storage adapter 주입은 chat/index.tsx ensureDb 시점에 1회 (T3 PASS 후 wiring).
+import '../src/telemetryStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // splash 가 이미 숨겨졌거나 web 에서 미지원이면 무시.
