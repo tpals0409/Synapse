@@ -12,7 +12,8 @@
 //   적용 영역 (검증 대상):
 //     (a) docs/sprints/sprint-9-external-data-and-decisions.md §3~§12
 //         (§1~§2 churn 회피 제외 — Sprint 8 에서 raw text 보존)
-//     (b) .claude/commands/{8 워커}.md 파일 line 9~12 (헌법 9~12 추기 영역)
+//     (b) .claude/agents/{8 워커}.md 파일 line 9~12 (헌법 9~12 추기 영역)
+//         (Sprint 11 /end 긴급 통합 수정: c460712 .claude/commands → .claude/agents swap 후속 정합.)
 //
 //   제외 영역 (false positive 회피):
 //     (a) 정책 정의 자체 라인 — '"박다"' 따옴표 / '용어 0건' / '용어 금지' 명시
@@ -148,7 +149,7 @@ const WORKERS = [
 ];
 
 for (const w of WORKERS) {
-  const p = resolve(ROOT, `.claude/commands/${w}.md`);
+  const p = resolve(ROOT, `.claude/agents/${w}.md`);
   if (!existsSync(p)) {
     allErrors.push(`워커 정의 미존재: ${p}`);
     continue;

@@ -1,8 +1,9 @@
 // Sprint 7 receipt — T14 (team-leader: consumer-producer-gap 정책 + spawn prompt 갱신) raw text 검증.
+// (Sprint 11 /end 긴급 통합 수정: c460712 의 .claude/commands → .claude/agents 구조 swap 후속 정합.)
 //
 // 호출:
 //   node --experimental-strip-types sprint7-contract-gap-policy.mjs
-//   → .claude/commands/{team-leader,mobile,engine,conversation,orchestrator,storage,designer,tester}.md 8 파일 안에
+//   → .claude/agents/{team-leader,mobile,engine,conversation,orchestrator,storage,designer,tester}.md 8 파일 안에
 //      세 가지 raw text 모두 박힘:
 //        (i)   D-S7-consumer-producer-gap-policy
 //        (ii)  consumer 슬라이스 시작 시 producer §7 계약 gap 사전 진단 1회 의무 (Sprint 6 retrospective)
@@ -18,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '../../..');
 
-const COMMANDS_DIR = resolve(ROOT, '.claude/commands');
+const COMMANDS_DIR = resolve(ROOT, '.claude/agents');
 const FILES = [
   'team-leader.md',
   'mobile.md',

@@ -76,7 +76,7 @@ if [ -f "$LINT_DIR/directive-tag-audit.ts" ]; then
     node --experimental-strip-types "$LINT_DIR/directive-tag-audit.ts" "$FIXT/directive-tag-audit.pass.md"
   assert_exit 1 "FAIL fixture (untagged directive)" \
     node --experimental-strip-types "$LINT_DIR/directive-tag-audit.ts" "$FIXT/directive-tag-audit.fail.md"
-  assert_exit 0 ".claude/commands/*.md dry-run" \
+  assert_exit 0 ".claude/agents/*.md dry-run" \
     node --experimental-strip-types "$LINT_DIR/directive-tag-audit.ts"
 fi
 

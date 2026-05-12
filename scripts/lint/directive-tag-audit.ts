@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // directive-tag-audit.ts
-// Sprint 2 lint — `.claude/commands/<role>.md` 의 SendMessage / spawn prompt 인용 안에서
+// Sprint 2 lint — `.claude/agents/<role>.md` 의 SendMessage / spawn prompt 인용 안에서
 // directive 의도(지시/강제/필수/MUST/DIRECTIVE)가 검출되면 `[DIRECTIVE v<date> <id>]`
 // 또는 `[FROZEN v<date> <id>]` 태그 부착 여부를 검증.
+// (Sprint 11 /end 긴급 통합 수정: c460712 의 .claude/commands → .claude/agents 구조 swap 후속 정합.)
 //
 // CLI:
-//   pnpm tsx scripts/lint/directive-tag-audit.ts             # 기본: .claude/commands/*.md 전체
+//   pnpm tsx scripts/lint/directive-tag-audit.ts             # 기본: .claude/agents/*.md 전체
 //   node --experimental-strip-types scripts/lint/directive-tag-audit.ts <file>...
 //   node --experimental-strip-types scripts/lint/directive-tag-audit.ts          # 동등
 //
@@ -30,7 +31,7 @@ import { join, resolve } from 'node:path';
 
 const HERE = new URL('.', import.meta.url).pathname;
 const ROOT = resolve(HERE, '../..');
-const COMMANDS_DIR = join(ROOT, '.claude/commands');
+const COMMANDS_DIR = join(ROOT, '.claude/agents');
 
 const DIRECTIVE_KEYWORDS = ['지시', '강제', '필수', 'MUST', 'DIRECTIVE'];
 const TAG_REGEX = /\[(DIRECTIVE|FROZEN) v\d{4}-\d{2}-\d{2} \S+?\]/;

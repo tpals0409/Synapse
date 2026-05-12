@@ -1,8 +1,9 @@
 // Sprint 9 receipt — Step 61: spawn-prompt-update.
+// (Sprint 11 /end 긴급 통합 수정: c460712 의 .claude/commands → .claude/agents 구조 swap 후속 정합.)
 //
 // 호출:
 //   node --experimental-strip-types sprint9-spawn-prompt-update.mjs
-//   → 8 워커 정의 (`.claude/commands/{team-leader,storage,engine,conversation,
+//   → 8 워커 정의 (`.claude/agents/{team-leader,storage,engine,conversation,
 //     orchestrator,mobile,designer,tester}.md`) raw text 검증:
 //      4 종 검증 토큰 모두 8 파일 OR 매칭 (각 토큰 별 ≥ 1 파일 출현):
 //        (1) "외부 데이터 독립성 1차 분류 의무"      — 헌법 9 raw text
@@ -44,7 +45,7 @@ const REQUIRED_TOKENS = [
 const missingFiles = [];
 const workerTexts = new Map();
 for (const w of WORKERS) {
-  const p = resolve(ROOT, `.claude/commands/${w}.md`);
+  const p = resolve(ROOT, `.claude/agents/${w}.md`);
   if (!existsSync(p)) {
     missingFiles.push(p);
     continue;
