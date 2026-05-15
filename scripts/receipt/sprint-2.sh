@@ -33,20 +33,24 @@ fi
 
 # ---------------------------------------------------------------------------
 step "[ 9/14] 헌법 inject 검증"
-# `.claude/agents/*.md` 8 워커 정의 + `.claude/commands/{start,end}.md` 2 슬래시커맨드
-# = 10 파일 모두 'HOLD-DECIDE-RESUME' 키워드 박힘.
-# (Sprint 10 carry-over: c460712 이후 commands → agents 구조 swap. Sprint 11 /end 긴급 통합 수정.)
-INJECT_TARGETS="$ROOT/.claude/agents"/*.md" $ROOT/.claude/commands"/*.md
-MISSING_INJECT=$(grep -L "HOLD-DECIDE-RESUME" $INJECT_TARGETS 2>/dev/null || true)
+# Sprint 14 D-S14-sprint-2-threshold-dynamic: 정적 10 파일 list → 동적 카운트, 7 워커 정렬 후 fail 회복.
+# `.claude/agents/*.md` 만 카운트 (Sprint 13 정렬로 .claude/commands/ 폐기 — 슬래시커맨드 0).
+# 임계 ≥ 7 (7 워커 정합). raw text marker `worker_constitution_targets=$INJECT_COUNT` 보존.
+INJECT_TARGETS_DIR="$ROOT/.claude/agents"
+if [ ! -d "$INJECT_TARGETS_DIR" ]; then
+  fail "[ 9/14] $INJECT_TARGETS_DIR 미존재 — 7 워커 정렬 회귀."
+fi
+MISSING_INJECT=$(grep -L "HOLD-DECIDE-RESUME" "$INJECT_TARGETS_DIR"/*.md 2>/dev/null || true)
 if [ -n "$MISSING_INJECT" ]; then
   echo "  미부착 파일:" >&2
   echo "$MISSING_INJECT" >&2
   fail "[ 9/14] 헌법 inject 누락 — 위 파일에 'HOLD-DECIDE-RESUME' 키워드 박힘 필요."
 fi
-INJECT_COUNT=$(grep -l "HOLD-DECIDE-RESUME" $INJECT_TARGETS 2>/dev/null | wc -l | tr -d ' ')
-echo "  HOLD-DECIDE-RESUME 박힌 파일: ${INJECT_COUNT}/10"
-if [ "$INJECT_COUNT" -lt 10 ]; then
-  fail "[ 9/14] 헌법 inject 파일 수 < 10 (실제 ${INJECT_COUNT})."
+INJECT_COUNT=$(find "$INJECT_TARGETS_DIR" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+echo "  HOLD-DECIDE-RESUME 박힌 파일: ${INJECT_COUNT}"
+echo "  worker_constitution_targets=${INJECT_COUNT}"
+if [ "$INJECT_COUNT" -lt 7 ]; then
+  fail "[ 9/14] 헌법 inject 파일 수 < 7 (실제 ${INJECT_COUNT})."
 fi
 
 # ---------------------------------------------------------------------------
