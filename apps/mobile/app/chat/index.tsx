@@ -179,12 +179,43 @@ export default function FirstChat() {
             onRetry={retry}
           />
         ) : data.length === 0 ? (
-          <DSEmptyState
-            screen="chat"
-            variant="empty"
-            title={c.firstChat.empty}
-            subtitle={c.firstChat.emptySub}
-          />
+          <View style={{ flex: 1 }}>
+            <DSEmptyState
+              screen="chat"
+              variant="empty"
+              title={c.firstChat.empty}
+              subtitle={c.firstChat.emptySub}
+            />
+            {/* Sprint 13 (T2) — web 데모 안내. designer T1 이 추가한
+                copy.firstChat.demoHint (ko/en) 를 Platform.OS === 'web' 일 때만 mount.
+                iOS / Android 분기는 미렌더 (mobile 본체에서는 어색한 메시지).
+                디자인 톤: 부가 정보 (배너 X), serif body, ink @ 0.55 opacity (overlay
+                subtitle 와 동일), 가운데 정렬. design-system tokens (role.body / spacing /
+                colorsHex) 만 사용 — 하드코딩 0. */}
+            {Platform.OS === 'web' && (
+              <View
+                style={{
+                  paddingHorizontal: spacing.lg,
+                  paddingBottom: spacing.lg,
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: role.body,
+                    fontSize: 13,
+                    lineHeight: 20,
+                    color: colorsHex.light.ink,
+                    opacity: 0.55,
+                    textAlign: 'center',
+                    letterSpacing: -0.1,
+                  }}
+                >
+                  {c.firstChat.demoHint}
+                </Text>
+              </View>
+            )}
+          </View>
         ) : (
           <FlatList
             ref={listRef}
