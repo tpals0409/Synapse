@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["node", "expo"]
+    "types": ["node", "expo", "jest"]
   },
-  "include": ["app", "app.json"]
+  "include": ["app", "app.json", "jest.setup.ts"]
 }

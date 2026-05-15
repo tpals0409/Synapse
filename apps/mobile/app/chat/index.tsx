@@ -34,6 +34,9 @@ import {
   subscribeError,
 } from '../../src/chatStore';
 import { subscribe as subscribeConcepts } from '../../src/conceptStore';
+// Sprint 14 (B1) — theme-aware demoHint. useTheme() 으로 effectiveTheme 기반 colorsHex 선택.
+// chat/index.tsx 전반의 다른 light-고정 토큰 참조는 본 슬라이스 범위 외 (별도 carry-over).
+import { useTheme } from '../../src/themeStore';
 // Sprint 8 (T5) — telemetry emit + 만족도 설문 UI control.
 // chatStore subscribeError / chatStore.sendStream 흐름 정합 — emit 은 turn 직후 (decide ack 시점).
 // Sprint 4 의 recallStore.subscribe 도 turn 마다 push 되므로 그곳에서도 emit 가능 (recall event).
@@ -45,6 +48,9 @@ const c = copy.ko;
 type DraftMessage = Message & { pending?: boolean };
 
 export default function FirstChat() {
+  // Sprint 14 (B1) — theme-aware token. 본 sprint 범위는 demoHint 영역 (L208) 만.
+  // 다른 light-고정 참조는 carry-over 로 분리 (대규모 swap = 별도 슬라이스).
+  const { colorsHex: themeColorsHex } = useTheme();
   const [messages, setMessages] = useState<DraftMessage[]>(() => {
     try {
       return listMessages();
@@ -205,7 +211,9 @@ export default function FirstChat() {
                     fontFamily: role.body,
                     fontSize: 13,
                     lineHeight: 20,
-                    color: colorsHex.light.ink,
+                    // Sprint 14 (B1) — theme-aware. light/dark 모두 정합 (디자인 목업 styles.css
+                    // :root 와 [data-theme="dark"] 반전 정합 — paper/ink 합 ≈ 1.16 oklch L).
+                    color: themeColorsHex.ink,
                     opacity: 0.55,
                     textAlign: 'center',
                     letterSpacing: -0.1,
