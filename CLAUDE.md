@@ -9,7 +9,7 @@
 - **디자인 목업**: `디자인 목업/` (iOS 프로토타입, 9 화면, React+Babel)
 - **스프린트 로드맵**: 아래 §스프린트 표
 - **현재 스프린트**: `docs/sprints/_current.txt`
-- **스프린트 dev doc**: `docs/sprints/sprint-N-<slug>.md` (이게 영속 메모리)
+- **스프린트 dev doc**: `docs/sprints/sprint-N-<slug>.md` (이게 영속 메모리, PM 단독 큐레이션)
 
 ## 기술 결정
 - 클라이언트: React Native + Expo (TypeScript)
@@ -20,7 +20,7 @@
 ## 모노레포 구조
 ```
 Synapse/
-├── apps/mobile/                  # RN + Expo (mobile 에이전트)
+├── apps/mobile/                  # RN + Expo (mobile 워커)
 ├── packages/
 │   ├── conversation/             # 대화 루프 (conversation)
 │   ├── llm/                      # Gemma 어댑터 (conversation)
@@ -28,16 +28,16 @@ Synapse/
 │   ├── orchestrator/             # Attention Control (orchestrator)
 │   ├── storage/                  # SQLite + sqlite-vec (storage)
 │   ├── design-system/            # 토큰, 컴포넌트, 애니메이션 (designer)
-│   └── protocol/                 # 공유 타입 (모든 에이전트)
+│   └── protocol/                 # 공유 타입 (모든 워커)
 ├── docs/sprints/                 # 스프린트 dev doc + 템플릿 + _current.txt
-│   └── sprint-N/reports/         # 워커별 슬라이스 리포트 (Sprint 11+, /end 가 dev doc 으로 통합)
+│                                 # (Sprint 0~12 의 sprint-N/reports/ 는 역사적 산물, Sprint 13+ 는 생성 안 함)
 ├── scripts/receipt/              # 스프린트별 receipt 자동 검증
 ├── e2e/scenarios/                # 종단 테스트 (tester)
 ├── 디자인 목업/                    # 참조 (read-only)
 ├── 기획서.md                      # 참조
 ├── SPRINTS.md                    # 인덱스
-├── .claude/agents/               # 8 서브에이전트 (Agent View dispatch 대상, Sprint 11+)
-└── .claude/commands/             # /start + /end 슬래시커맨드 (team-leader 세션에서 PM 입력)
+└── .claude/agents/               # 7 서브에이전트 (Agent View dispatch 대상, Sprint 13+)
+                                  # .claude/commands/ 는 비어있음 — 슬래시커맨드 없음
 ```
 
 ## 명령어
@@ -50,49 +50,71 @@ pnpm --filter mobile build         # 모바일 빌드
 bash scripts/receipt/sprint-N.sh   # 스프린트 N receipt 검증
 ```
 
-## 스프린트 라이프사이클 (Sprint 11+ Agent View 단계별 dispatch)
+## 스프린트 라이프사이클 (Sprint 13+ 공식 Agent View)
 
-전체 그림: PM 이 team-leader 세션에 **foreground** attach → team-leader 가 워커를 **Tier 1 → 2 → 3 순차** 백그라운드 dispatch → 각 Tier 완료 후 team-leader 가 main 으로 squash merge → 다음 Tier 시작 → 모든 Tier 끝나면 /end 가 리포트 수확 + dev doc 마감.
+PM 이 `claude agents` 만으로 모든 일을 한다. team-leader 워커 없음. /start /end 슬래시커맨드 없음.
 
-**진입점**:
+공식 docs: https://docs.claude.com/ko/docs/claude-code/agents-view
+
+### 진입
 ```bash
 cd /Users/kimsemin/Desktop/2026/Synapse
-claude --agent team-leader                       # foreground attach (--bg 금지)
+claude agents
 ```
 
-**사이클**:
+### 사이클 (PM 관점)
 ```
-1. team-leader 세션 안: PM: /start
-2. team-leader: N + N-1 읽기 → 워커 슬라이스 + Tier 분류 보고 → PM 사인오프 게이트
-3. team-leader: Tier 1 (producer-only) 워커 자동 dispatch
-        ↓ claude --bg --agent <worker> "<sed 추출 슬라이스>"
-   PM: $ claude agents (다른 터미널 또는 ← 키) — 모니터링 + needs-input 즉답
-4. 모든 Tier 1 Completed 후 PM 신호 → team-leader: squash merge → worktree 제거
-5. team-leader: Tier 2 (의존 + 자체 export) 워커 dispatch (위와 동일 패턴)
-6. 모든 Tier 2 Completed 후 PM 신호 → team-leader: squash merge → worktree 제거
-7. team-leader: Tier 3 (소비자만) 워커 dispatch
-8. 모든 Tier 3 Completed 후 PM: /end
-9. /end: Tier 3 잔여 머지 → 리포트 일괄 수확 → dev doc 조립 (Implementation Map / Carry-over / Retrospective) → receipt → N+1 스켈레톤 → git tag
-10. /clear → 진입점 명령 → /start (다음 사이클)
+1. dev doc 준비
+   PM 이 docs/sprints/sprint-N-<slug>.md 스켈레톤 작성 (Goal / Scope /
+   Worker Slices §5.5 / Constitution refs). 직전 스프린트의 *Carry-over*
+   섹션을 N 의 시작점으로 복사.
+
+2. 워커 dispatch
+   `claude agents` 입력에 `@<worker> <slice>` 입력 (예: `@designer ...`).
+   슬라이스가 producer-only / consumer-only 인지는 PM 이 §5.5 의존 그래프를 보고 판단.
+   producer-only 부터 띄우고 그 동안 PM 은 다른 작업.
+
+3. 모니터링
+   peek (Space) 로 빠른 확인, 필요시 attach (Enter).
+   `s:blocked` 필터로 needs-input 워커만 보고 즉답.
+
+4. 머지 결정
+   워커가 자기 worktree 에 작업 완료 + transcript 4 줄 요약 (슬라이스 결과 /
+   Interfaces / Carry-over / Frozen 위반 여부) 남김. PM 이 transcript 확인 후
+   main 으로 squash merge. 충돌 시 PM 이 직접 해소.
+
+5. 다음 워커
+   1 단계 producer 머지 후 의존 워커 dispatch. 의존 워커의 worktree HEAD =
+   머지된 fresh main 보장 (`origin/main` 동기화 필수, 아래 *핵심 약속 3* 참조).
+
+6. dev doc 큐레이션
+   모든 워커 완료 후 PM 이 transcript / commit 보고 *Implementation Map* /
+   *Carry-over* / *Retrospective* 직접 작성.
+
+7. receipt 검증
+   bash scripts/receipt/sprint-N.sh
+
+8. 다음 스프린트
+   docs/sprints/_current.txt 갱신, N+1 스켈레톤 작성, git tag sprint-N-closed,
+   git push origin main (다음 사이클의 base 갱신).
 ```
 
-**Tier 분류 (dev doc §5 File Ownership 의 Tier 컬럼 + §5.5 Worker Slices 의 Tier 필드)**:
-- **Tier 1 (producer-only)**: 다른 워커가 의존하는 영향력 있는 변경 — protocol 타입, storage 마이그레이션, design tokens breaking. Tier 1 워커끼리는 동시 dispatch 안전.
-- **Tier 2 (의존 + 자체 export)**: Tier 1 결과를 import 하면서 자기도 새 export — engine / conversation / orchestrator.
-- **Tier 3 (소비자만)**: 모든 producer 의 결과를 consume — mobile UI, tester e2e.
+### 핵심 약속
 
-이 순차 dispatch 로 헌법 5 (Consumer 사전 진단) / 헌법 6 (Root index grep) 의 grep 기준점이 자동으로 최신 main 보장 — Tier N 워커의 worktree HEAD = 직전 Tier 머지 후 main 상태.
+**1. dev doc = 영속 메모리** — PM 단독 큐레이션. 워커는 transcript 4 줄만 남긴다. dev doc 의 *Implementation Map* / *Carry-over* / *Retrospective* 는 PM 이 워커 transcript 를 보고 직접 작성. 자동 조립 없음.
 
-**핵심 약속 1 — dev doc = 영속 메모리**: 메인 dev doc 은 team-leader 단독 소유. 워커는 자기 `reports/<self>.md` 만 작성. `/end` 가 N 개 리포트를 dev doc 의 *Implementation Map* / *Carry-over* / *Retrospective* 로 조립.
+**2. Carry-over 자가완결** — N+1 시작 시 PM 은 N + N-1 두 dev doc 만 읽는다. 따라서 N 의 Carry-over 가 부실하면 다음 사이클 단절. PM 이 마감 시 의식적으로 자가완결적으로 작성한다 (외부 참조 없이 N+1 워커들이 시작 가능한 정보 밀도).
 
-**핵심 약속 2 — Carry-over 자가완결**: `/end` 의 *Carry-over* 가 부실하면 다음 사이클이 단절됨. `/start` 는 N + N-1 두 문서만 읽으므로 N-1 의 carry-over 는 *반드시* 자가완결적이어야 한다. 워커 리포트 §4 가 일차 자료.
+**3. origin/main 동기화 의무 (Sprint 13 신규)** — Agent View 의 `isolation: worktree` 메커니즘이 worktree base 로 `origin/main` 을 사용한다. local main 만 진행하고 push 안 하면 worktree 가 stale main 위에 만들어져 모든 producer-consumer 동기화가 깨진다. **Sprint 마감 직후 반드시 `git push origin main`** — Sprint 10/11/12 가 3 연속 no-op close 된 진정한 원인이 이 누락이었음. 다음 사이클 첫 dispatch 전에 `git rev-parse main == git rev-parse origin/main` 1회 확인.
 
-**핵심 약속 3 — Worktree 격리 + Tier 순차 dispatch**: Agent View 가 워커 dispatch 시 자동으로 `.claude/worktrees/<id>/` 격리. 워커 간 코드 충돌 차단. Tier 단계별 dispatch 로 producer-consumer 동기화 보장 — Tier N 워커는 직전 Tier 완료된 main 위에서 시작. team-leader 만 메인 디렉토리에서 작업하며 **foreground 세션** 유지 (백그라운드 dispatch 금지).
+**4. 워크트리 격리** — 각 워커는 `isolation: worktree` (`.claude/agents/<role>.md` frontmatter). `.claude/worktrees/<id>/` 자동 생성. `claude rm <id>` 로 세션 + worktree 동시 정리. 미머지 worktree 는 push 후 정리.
 
-**핵심 약속 4 — 워커 간 직접 통신 금지**: 워커가 다른 워커의 코드 / 컨텍스트에 끼어들지 않음. producer gap 발견 시 즉시 작업 중단 + 자기 리포트 §5 에 기록 + 세션 종료. team-leader 가 다음 Tier 또는 /end 에서 흡수해 producer 재dispatch.
+**5. 워커 간 직접 통신 금지** — producer gap 발견 시 PM 에게 needs-input. 다른 워커 코드 / context 에 끼어들지 않는다. PM 이 다음 사이클에서 producer 재dispatch.
+
+**6. 직렬화는 PM 의 결정** — Tier 강제 없음. 의존 그래프 (dev doc §5.5) 보고 PM 이 동시 / 순차 선택. producer-only 워커는 같이 띄워도 안전, consumer 는 producer 머지 후.
 
 ### tmux 다중-pane 단일 세션 모드 (옵션, 비-권장)
-빠른 prototyping 또는 quota 절약이 필요할 때, 한 세션 안에서 8 페르소나를 슬래시커맨드로 전환하는 옛 패턴도 가능. 단 진짜 병렬성/worktree 격리/리포트 디렉토리 미사용 → /start /end 흐름과 불일치 → Sprint 11+ 권장 흐름 아님. Sprint 0~10 dev doc 회고용 이력 참조만.
+빠른 prototyping 또는 quota 절약이 필요할 때, 한 세션 안에서 7 페르소나를 슬래시커맨드로 전환하는 옛 패턴도 가능. 단 진짜 병렬성/worktree 격리 미사용 → 공식 Agent View 흐름과 불일치 → Sprint 13+ 권장 아님. Sprint 0~10 dev doc 회고용 이력 참조만.
 
 ## 스프린트 로드맵 (high-level)
 | # | Title | Goal |
@@ -106,7 +128,7 @@ claude --agent team-leader                       # foreground attach (--bg 금�
 | 6 | Failure & Hygiene | Dismiss/Unlink, Humble Retraction, Forgetting |
 | 7 | Polish | 애니메이션, 테마, 한/영, Empty/Error, 사용자 테스트 |
 
-이 표는 PM 의 항해도. `/end` 가 N+1 의 Goal 을 도출할 근거. 변경 자유 — 변경 시 N 의 *Carry-over* 에 사유를 기록한다.
+이 표는 PM 의 항해도. PM 이 dev doc 큐레이션 시 N+1 의 Goal 을 도출할 근거. 변경 자유 — 변경 시 N 의 *Carry-over* 에 사유를 기록한다.
 
 ## 디자인 톤 (디자인 목업 추출 요약)
 - **컨셉**: 따뜻한 종이 저널 / 잉크가 떠오르는 듯한 애니메이션
@@ -117,24 +139,23 @@ claude --agent team-leader                       # foreground attach (--bg 금�
 - **애니메이션 의도**: `recall-emerge` (blur→clear), `ink-rise` (위로 떠오름), `synapse-pulse`, `ghost-breathe`, `thread-draw`, `node-orbit`
 - **단일 진실원**: `디자인 목업/styles.css`, `디자인 목업/content.jsx` (`COPY`, `DEMO_KO/EN`, `MEMORIES_KO/EN`), `디자인 목업/screens.jsx`, `디자인 목업/synapse-ui.jsx`
 
-## 에이전트 (`.claude/agents/`, Sprint 11+ 서브에이전트)
-| Agent | 역할 | dispatch 방식 | 담당 |
+## 워커 (`.claude/agents/`, Sprint 13+ 7 서브에이전트)
+| Worker | 역할 | dispatch | 담당 |
 |---|---|---|---|
-| `team-leader` | 오케스트레이터, /start·/end 실행 | `claude --agent team-leader` (PM attach) | `docs/sprints/`, `SPRINTS.md`, `CLAUDE.md` |
-| `mobile` | RN + Expo | `claude --bg --agent mobile` | `apps/mobile/` |
-| `engine` | Memory Engine | `claude --bg --agent engine` | `packages/engine/` |
-| `conversation` | 대화 루프 + LLM | `claude --bg --agent conversation` | `packages/conversation/`, `packages/llm/` |
-| `orchestrator` | Attention Control | `claude --bg --agent orchestrator` | `packages/orchestrator/` |
-| `storage` | SQLite + sqlite-vec | `claude --bg --agent storage` | `packages/storage/` |
-| `designer` | 디자인 시스템 | `claude --bg --agent designer` | `packages/design-system/` |
-| `tester` | QA + receipt 자동화 | `claude --bg --agent tester` | `**/__tests__/`, `e2e/`, `scripts/receipt/` |
+| `mobile` | RN + Expo | `@mobile <slice>` (Agent View) 또는 `claude --bg --agent mobile` | `apps/mobile/` |
+| `engine` | Memory Engine | `@engine <slice>` | `packages/engine/` |
+| `conversation` | 대화 루프 + LLM | `@conversation <slice>` | `packages/conversation/`, `packages/llm/` |
+| `orchestrator` | Attention Control | `@orchestrator <slice>` | `packages/orchestrator/` |
+| `storage` | SQLite + sqlite-vec | `@storage <slice>` | `packages/storage/` |
+| `designer` | 디자인 시스템 | `@designer <slice>` | `packages/design-system/` |
+| `tester` | QA + receipt 자동화 | `@tester <slice>` | `**/__tests__/`, `e2e/`, `scripts/receipt/` |
 
-각 정의는 `.claude/agents/<role>.md` 에 있고, frontmatter (name / description / tools / isolation) + 본문 5 섹션 표준 (역할 / 담당 영역 / 작업 규칙 / 인터페이스 / 리포트 작성 의무 / 공통 헌법). 워커는 모두 `isolation: worktree` — Agent View dispatch 시 자동 worktree 격리. team-leader 만 메인 디렉토리에서 작동.
+각 정의는 `.claude/agents/<role>.md` 에 있고, frontmatter (name / description / tools / `isolation: worktree`) + 본문 6 섹션 표준 (역할 / 담당 영역 / 작업 규칙 / 인터페이스 / 종료 시 transcript 4 줄 요약 / 공통 헌법 12 항). 모든 워커가 `isolation: worktree` — Agent View dispatch 시 자동 worktree 격리.
 
-슬래시커맨드는 `.claude/commands/` 의 `/start` 와 `/end` 두 개만 존재 — team-leader 세션 안에서 PM 이 입력하는 명령.
+`.claude/commands/` 는 비어있다. 슬래시커맨드 없음. PM 이 `claude agents` 에서 직접 dispatch.
 
 ## 프로젝트 부트스트랩 (Sprint 0 의 N-1 대용)
-첫 `/start` 호출 시 N-1 dev doc 이 없으므로, 다음을 N-1 carry-over 의 대체로 사용:
+Sprint 0 첫 dispatch 시 N-1 dev doc 이 없으므로, 다음을 N-1 carry-over 의 대체로 사용:
 - `기획서.md` 전체 — 제품 결정의 출처 (특히 §6 Dual Engine, §7 Core Features, §16 Orchestrator Rule)
 - 본 `CLAUDE.md` — 기술 결정, 디자인 톤, 스프린트 로드맵
 - `디자인 목업/` — 시각/카피 단일 진실원
