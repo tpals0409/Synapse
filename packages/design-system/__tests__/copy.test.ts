@@ -172,3 +172,19 @@ test('copy: 신규 7 키 (Sprint 7) 모두 비어있지 않은 string', () => {
     }
   }
 });
+
+// Sprint 13 (T1) — `firstChat.demoHint` web 데모 한정 안내.
+// 디자인 목업 content.jsx 부재 키 — D-S4 (목업 단일 진실원) 영향권 *밖*.
+// mobile T2 web 분기 EmptyState 위에 1 줄로 mount.
+test('copy.{ko,en}.firstChat.demoHint 존재 + 비어있지 않은 string (Sprint 13)', () => {
+  for (const lang of ['ko', 'en'] as const) {
+    const v = copy[lang].firstChat.demoHint;
+    assert.equal(typeof v, 'string', `${lang}.firstChat.demoHint`);
+    assert.ok(v.length > 0, `${lang}.firstChat.demoHint non-empty`);
+  }
+});
+
+test('copy.{ko,en}.firstChat.demoHint 의도 카피 (Sprint 13)', () => {
+  assert.equal(copy.ko.firstChat.demoHint, '이건 웹 데모예요. 진짜 기억은 모바일에서 시작돼요.');
+  assert.equal(copy.en.firstChat.demoHint, 'This is a web demo. Real memories begin in the mobile app.');
+});

@@ -59,6 +59,14 @@
 //   → EmptyState/ErrorState 컴포넌트가 호출자가 주입한 text/subtext 를 받음 (props).
 //   → 4 화면 (Onboarding/FirstChat/Inspector + Strong/Ghost) 이 동일 키 재사용 OR 화면별 직접 주입.
 //   → 키 추가 0. 컴포넌트 prop interface 로 유연성 확보.
+//
+// Sprint 13 (T1) 추가 — `firstChat.demoHint`:
+//   web 데모 환경 (모바일 앱이 아닌 브라우저 미리보기) 에서 빈 화면일 때
+//   "여긴 데모이고 진짜 기억은 모바일에서 시작된다" 는 1 줄 안내.
+//   → mobile T2 가 web 분기에서만 mount, 네이티브 분기에서는 미사용.
+//   → 디자인 목업 content.jsx 부재 키 — web 데모 한정 신호라 목업 단일 진실원 (D-S4) 영향권 *밖*.
+//     verify-copy 는 content.jsx 매칭 *제외* + ko self-consistency 1 건만 추가 (ok 23→24).
+//   → 디자인 톤: 따뜻한 종이 저널 / 잉크가 떠오르는 안내 — "이건 웹 데모예요. 진짜 기억은 모바일에서 시작돼요."
 
 export interface OnboardingCopy {
   hi: string;
@@ -77,6 +85,9 @@ export interface FirstChatCopy {
   errorSub: string;
   retry: string;
   typing: string;
+  // Sprint 13 (T1) — web demo only. 디자인 목업 content.jsx 부재 키 — D-S4 영향권 밖.
+  // mobile T2 가 web 분기 EmptyState 위에 1 줄로 mount.
+  demoHint: string;
 }
 
 export interface RecallSurfaceCopy {
@@ -134,6 +145,8 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       errorSub: '다시 시도하시겠어요?',
       retry: '다시 시도',
       typing: '생각하는 중',
+      // Sprint 13 (T1) — web 데모 안내 1 줄.
+      demoHint: '이건 웹 데모예요. 진짜 기억은 모바일에서 시작돼요.',
     },
     recall: {
       ghost: { title: '그날의 너', subtitle: 'Ghost Hint · 레벨 1' },
@@ -172,6 +185,8 @@ export const copy: { ko: CopyShape; en: CopyShape } = {
       errorSub: 'Try again?',
       retry: 'Retry',
       typing: 'thinking',
+      // Sprint 13 (T1) — web demo hint, parity with ko.
+      demoHint: 'This is a web demo. Real memories begin in the mobile app.',
     },
     recall: {
       ghost: { title: 'From you, before', subtitle: 'ghost hint · level 1' },

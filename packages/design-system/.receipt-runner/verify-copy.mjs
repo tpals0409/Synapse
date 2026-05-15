@@ -13,7 +13,7 @@
 // design-system 자기 자신의 카피 진실원 매칭은 자기 패키지에서 검증하는 게 자연스럽고,
 // 상대 import (`../index.ts`) 로 self-import 회피.
 //
-// 검증 키 (Sprint 1 6 + Sprint 3 2 + Sprint 4 5 + Sprint 6 3 + Sprint 7 7 = 23):
+// 검증 키 (Sprint 1 6 + Sprint 3 2 + Sprint 4 5 + Sprint 6 3 + Sprint 7 7 + Sprint 13 1 = 24):
 //   Sprint 1:
 //     COPY.ko.onboard.hi    ↔ copy.ko.onboarding.hi       ("안녕하세요.")
 //     COPY.ko.onboard.sub   ↔ copy.ko.onboarding.sub      ("그냥 이야기해보세요...")
@@ -42,6 +42,9 @@
 //     COPY.ko.why         ↔ copy.ko.recall.why            ("왜 떠올랐냐면")
 //     COPY.ko.sources     ↔ copy.ko.recall.sources        ("연결된 기억")
 //     COPY.ko.confidence  ↔ copy.ko.recall.confidence     ("확신")
+//   Sprint 13 (T1 — web 데모 한정 안내, content.jsx 부재 키 → self-consistency only):
+//     copy.ko.firstChat.demoHint  (non-empty string)  — D-S4 영향권 밖 (mobile T2 web 분기 한정).
+//       → checks 배열에서 제외, 별도 self-check 1 카운트로 ok 23→24.
 //
 // (T4/T6 가 의도적으로 키 네임스페이스를 정리한 부분 — `onboard.*` → `onboarding.*`,
 //  flat `placeholder/captured/capturedSub` → `firstChat.*`,
@@ -122,6 +125,16 @@ if (failures.length > 0) {
   console.error('COPY i18n mismatch:');
   for (const f of failures) console.error('  -', f);
   process.exit(3);
+}
+
+// Sprint 13 (T1) — web 데모 한정 demoHint self-consistency.
+// 디자인 목업 content.jsx 부재 키라 raw text 매칭 대신 ko 가 비어있지 않은 string 인지만 확인.
+// (en parity 는 copy.test.ts shape 검사로 가드 → 여기서는 ko 1 카운트만.)
+if (typeof ko.firstChat.demoHint === 'string' && ko.firstChat.demoHint.length > 0) {
+  okCount += 1;
+} else {
+  console.error('Sprint 13 demoHint self-check: copy.ko.firstChat.demoHint must be a non-empty string');
+  process.exit(4);
 }
 
 process.stdout.write(`ok=${okCount}`);
