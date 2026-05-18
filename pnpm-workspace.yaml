@@ -2,4 +2,5 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'scripts/receipt/.receipt-runner'
+  - 'scripts/export'
   - 'e2e/scenarios'

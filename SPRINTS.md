@@ -1,25 +1,54 @@
-# Synapse — Sprint Index
+# SPRINTS.md — Synapse Sprint Index
 
-진행 중인 스프린트는 `docs/sprints/_current.txt` 에 기록된다.
-상세 dev doc: `docs/sprints/sprint-N-<slug>.md`.
+## Sprint 17+ (leo-agile-builder workflow)
 
-| # | Status | Title | Goal |
-|---|---|---|---|
-| 0 | ✅ done | [Scaffolding](docs/sprints/sprint-0-scaffolding.md) | 모노레포 + RN+Expo + 로컬 Gemma + sqlite-vec — receipt PASS, 22/22 테스트, "안녕→Gemma→SQLite" 종단 흐름 동작 |
-| 1 | ✅ done | [Conversation Loop](docs/sprints/sprint-1-conversation-loop.md) | Onboarding/FirstChat + Gemma 스트리밍 + SQLite latency_ms — receipt PASS 8/8, 53 테스트, mobile 969 kB, e2e chunks=10 length=22 ms=594 |
-| 2 | ✅ done | [Agent Workflow Hardening](docs/sprints/sprint-2-agent-workflow-hardening.md) | receipt PASS 14/14 — 헌법 inject 10/10 · Sprint 1 §11 17 결정 FROZEN retrofit · lint 3 종(mockup/frozen/directive) 9/9 · race-regression 5/5 · Sprint 1 e2e 회귀 chunks=10 length=22 ms=608 |
-| 3 | ✅ done | [Memory Formation](docs/sprints/sprint-3-memory-formation.md) | receipt PASS 22/22 — Concept 추출(label0=산책) + 768d 임베딩(embeddinggemma) + Graph 형성(concepts=4 co_occur=3) + nearestConcepts top-3(sorted) + CaptureToast i18n ok=8 · D-S3-chatStore-internal-wiring frozen · Sprint 1 회귀 chunks=10 length=22 ms=630 |
-| 4 | ✅ done | [Recall L1~L3](docs/sprints/sprint-4-recall-l1-l3.md) | receipt PASS 32/32 — 4 원 DecisionAct decide+silence + recallCandidates(semantic+co_occur) + 4 화면 + recall_log + carry-over 5 두 번째 시범 PASS · 12 frozen(D-S4-{conversation-orchestrator-dep, storage-{recall-row-snake-case, traverse-scope, traverse-depth-throw}, orchestrator-{decide,silence,types-protocol-reexport}, loop-recall-hook, chatStore-recall-wiring, receipt-runner-{workspace-package,nearest-traverse-adapter}, recall-fixture-threshold-zero, design-system-single-copy-file, conversation-recall-default-thin-wrap, receipt-enum-drift-reexport-policy}) · 실측 chunks=10 length=22 ms=738 / concepts=2 co_occur=1 nearest=3 / decisions=4 / recall_candidates=6 / cooldown_silence=1 / verify-copy ok=13 |
-| 5 | ✅ done | [Hyper-Recall](docs/sprints/sprint-5-hyper-recall.md) | receipt PASS 40/40 — Bridge / Temporal / Domain Crossing 3 알고리즘 + recallCandidates 합집합 + decide weak 약화 · 모노레포 242 PASS (storage 33 / engine 60 / orchestrator 35 / conversation 33 / design-system 56 / protocol 19 / llm 6) · 17 frozen(D-S5-{recall-source-priority, protocol-concept-edge-migration, receipt-threshold-recovery, concept-createdAt-retain, graph-edge-field-naming, engine-types-thin-shim, engine-root-index-hyperrecall-export, design-system-source-string-union, orchestrator-decide-hyper-source, InspectorList-source-field, storage-traverse-bfs, T5-conversation-hook-activation, recallStore-detailed-getter, storage-label-expose, mobile-T6-label-direct, storage-nearest-label-determinism, receipt-recall-hyper-fixture}) · carry-over 7 + 10 RESOLVED · 실측 candidates=7~9 sources=mixed:4-6+temporal:3 / bridge fixture C via=B depth=2 / temporal top=x score=0.7 / domain top=X score=1.25 |
-| 6 | ✅ done | [Failure & Hygiene](docs/sprints/sprint-6-failure-hygiene.md) | receipt PASS 46/46 — Dismiss/Unlink + Humble Retraction + Forgetting (7d 지수 감쇠) · 12 frozen(D-S6-{storage-rollback-caller-pass, storage-recall-log-dismissed-shape, storage-rollback-shape, forgetting-decay-shape, forgetting-half-life-default, engine-recall-forgetting-dismiss-order, engine-dismiss-penalty-default, protocol-concept-last-used-at, protocol-recall-log-dismissed, protocol-message-retracted, orchestrator-root-index-dismiss-export, lint-frozen-flag-audit-regex-alternation, design-system-mockup-conflict-resolution, storage-listMessages-retracted, storage-sql-secondary-sort-audit}) · carry-over 2 / 3 / 5 / 6 RESOLVED · platform-adapter 누적 6회 · 디자인 목업 1:1 PM A안(HumbleRetraction 카드 mount) · 시그니처 동결 100% · 실측 chunks=5+ length=10+ nearest=2+ recall_candidates=3+ bridge=1 temporal=1 / dismiss_decay=2 retracted_count=1 pruned_edges=2 |
-| 7 | ✅ done | [Polish](docs/sprints/sprint-7-polish.md) | receipt PASS 53/53 — 모션 8 토큰 1:1 / oklch dark inversion (paper 1.165 / ink 1.160) / verify-copy ok=23 / EmptyState 4 화면 + ErrorState 3 reason / e2e full-journey 9 단계 PASS · 12 frozen(D-S7-{design-system-{motion-token-parity, oklch-inversion, color-tokens-widen, empty-error-shape, empty-error-constants-export, copy-keys}, consumer-producer-gap-policy, team-lead-directive-pre-verify, conversation-send-ts-monotonic, tester-{motion-token-parity-narrowing, e2e-workspace-deps}, inspector-unlink-decision}) · Sprint 6 carry-over 2 (mobile workspace deps) + 4 (gap policy) + 5 (Inspector unlink A안) RESOLVED · 헌법 5~8 8 워커 spawn prompt 영구 박힘 · platform-adapter 누적 8회 · conversation 100x 결정성 · 실측 motion_drift=0 / paper_sum=1.165 / ink_sum=1.160 / ok=23 / empty_screens=4 / error_reasons=3 / full_journey=9 / policy_marks=24 |
-| 8 | ✅ done | [External Validation](docs/sprints/sprint-8-external-validation.md) | receipt PASS 60/60 — close 분기 (A) 채택 (외부 데이터 수집 시간축 분리) · 외부 검증 인프라 영구 보존 (PII 정책 + 모집 양식 + 세션 가이드 + telemetry schema 0006_telemetry + mobile telemetryStore 9회차 + 만족도 UI + receipt fixture 7) · 12 frozen(D-S8-{recall-log-retention,concept-dedup,negation-classifier,theme-toggle,empty-error-copy}-decision = 보류 + inspector-unlink-recheck = A안 reconfirm + pii-policy + consent-form + session-guide + storage-shape-ack + mobile-telemetry-event-abstraction + negation-classifier-path-resolution + tester-fixture-strict-matching) · engine T6 dormant code first 사례 (175줄 + 17/17 영구 보존) · engine + conversation T7 사전 합의 영구 보존 (race 0 동시 PR ready) · 헌법 7 옵션 (a) consumer-driven 자가판단 first 사례 (mobile T5 'send' protocol union 1줄 확장) · 헌법 8 first 본격 적용 (stale directive 8건 catch + 정정) · fixture-contract gap 5건 정정 (token boundary + 분기 disambiguation 강제) · 실측 external_session_count=0 (branch=B) / index_marks=6 / pii_policy_marks=5 / frozen_decisions_carry_over=5 / sprint_7_fixtures=6 |
-| 9 | ✅ done | [External Data and Decisions](docs/sprints/sprint-9-external-data-and-decisions.md) | receipt PASS 65/65 — close 분기 (B) C-revised 채택 (Sprint 8 carry-over 14 시간축 분리 권고 적용, 외부 데이터 N=0 인프라 sprint) · 9 frozen + 1 reconfirm (D-S9-{close-branch-B, constitution-9-10-11-adopted, no-pakda-term, theme-toggle-decision, empty-error-copy-decision, concept-dedup-decision, recall-log-retention-decision, negation-classifier-decision, inspector-unlink-recheck = A안 reconfirm}) · 헌법 9~12 영구 확정 8 워커 정의 line 9~12 보존 (9: 외부 데이터 독립성 1차 분류 / 10: dormant code valid 4 조건 / 11: directive 진단 mismatch 보고 / 12: PM frozen "박다" 0건) · stale directive 0건 first sprint · 헌법 11 first 정합 (tester fixture 자체 보강) · carry-over 5 next iteration (정책 자체 라인 패턴 6번째 룰 후보) · 코드 영역 변경 0 (storage / engine / conversation / mobile / designer / orchestrator) · 실측 external_session_count=0 / frozen_decisions_updated=5 / pakda_term_count=0 / sprint10_trigger_marks=5 / reject_layer_marks=2 / workers_with_constitution=8 |
-| 10 | ⚠ no-op close | [External Data Arrival](docs/sprints/sprint-10-external-data-arrival.md) | no-op close 영구 확정 — 사용자 명시적 "작업 중지" + 외부 데이터 N=0. /start 가 PM 사인오프 게이트 직전에서 정지 → dev doc §3 In/Out 확정 + §10 변경 0건 + §11 3 frozen (D-S10-{no-op-close, receipt-script-deferred, decisions-frozen-deferred}) + §12 carry-over 10 항목 + Sprint 11 reincarnation skeleton 생성. 코드 영역 변경 0. Sprint 9 carry-over 14 항목 그대로 Sprint 11 이월. 시간축 분리 패턴 세 번째 정합 사례 (Sprint 8 (A) first / 9 (B) C-revised second / 10 (no-op) third) |
-| 11 | ⚠ no-op close | [External Data Arrival](docs/sprints/sprint-11-external-data-arrival.md) | no-op close 영구 확정 (두 번째 연속) — PM 외부 모집 트랙 raw 세션 N=0 + PM 사인오프 GO branch=B. /start 가 §3 In/Out 만 확정 + 워커 dispatch 0건. /end 가 §10 변경 0건 + §11 4 frozen (D-S11-{no-op-close, receipt-script-deferred, decisions-frozen-deferred, receipt-infra-hotfix}) + §12 carry-over 11 항목 + Sprint 12 reincarnation skeleton 생성. **D-S11-receipt-infra-hotfix 5 파일 swap** (c460712 후속 정합 — `.claude/commands/` → `.claude/agents/` stale 참조 receipt/lint 자산 일괄 갱신, Sprint 9~10 마감 stale 마크 first 실측 catch). Sprint 9 receipt 65/65 PASS 재실측 + 모노레포 437 PASS. 시간축 분리 패턴 네 번째 정합 사례 영구 확정 (Sprint 8 (A) first / 9 (B) C-revised second / 10 (no-op) third / 11 (no-op) fourth) |
-| 12 | ⚠ no-op close | [External Data Arrival](docs/sprints/sprint-12-external-data-arrival.md) | no-op close 영구 확정 (세 번째 연속, X4 swap) — `/start` 사인오프 운영 모드 = branch=C 메타 sprint pivot (D-S12-branch-c-meta-pivot) 시도했으나 **Agent View worktree base 시스템 결함** (cmux isolation=worktree 가 main HEAD 가 아닌 `15f8228 sprint-5` fix point 사용) 으로 designer Tier 1 3회 연속 dispatch 모두 무력화. PM 사인오프 X1 (`.gitignore` 수정 + 영속화 commit `f5fa65c` 33 파일) → X1 으로도 base 미갱신 → PM 사인오프 X4 (no-op close 세 번째). 6 frozen (D-S12-{branch-c-meta-pivot, x1-persistence-fix, x4-no-op-close-third, agent-view-worktree-base-defect, receipt-script-deferred, decisions-frozen-deferred}). team-leader 메타 영역 (T1+T2+T3) 영속화 50% 성공 — `.claude/commands/end.md` §5 + `docs/dev-infra.md` git history 진입. **D-S12-x1-persistence-fix = sprint-0~12 dev doc + 8 워커 정의 + CLAUDE.md + SPRINTS.md 영속성 first hotfix** (이전엔 모두 untracked). Sprint 9 receipt 65/65 PASS 재실측 + 모노레포 437 PASS. 시간축 분리 패턴 다섯 번째 정합 사례 영구 확정 |
-| 13 | ☐ planned | [External Data Arrival](docs/sprints/sprint-13-external-data-arrival.md) | Sprint 11/12 의 reincarnation (세 번째 reincarnation, Sprint 10→11→12→13 4중 동일 raw text 체인) — §1~§2 raw text 그대로 복제 + Sprint 12 메타 본체 50% inheritance (designer copy 키 + mobile web 분기 mount + tester sprint-13.sh fixture 4종). trigger = raw 세션 N≥3 도착 OR Agent View 결함 해소. **Agent View 결함 우회 패턴 (X2 manual worktree 또는 X3 isolation 미사용) 강제** — cmux isolation=worktree 사용 금지. /start 진입 시 시스템 결함 사전 점검 의무 신규 (Sprint 12 신규). N=0 + 결함 미해소 시 branch=B no-op close 네 번째 연속 가능 (시간축 분리 패턴 여섯 번째 정합 사례 후보) |
+`/sprint <feature>` 로 시작. 디렉토리: `.claude/state/sprints/sprint-NNN-<slug>/` (5 파일 + meta.json + receipt.sh).
+단일 진실원: `AGENTS.md` §1~§8.
 
-범례: ✦ 진행 중 · ✅ 완료 · ☐ 예정 · ⚠ partial 종료
+| Sprint | Slug | Domain | Status | 진입점 |
+|---|---|---|---|---|
+| 017 | leo-workflow-bootstrap | workflow | completed | `.claude/state/sprints/sprint-017-leo-workflow-bootstrap/` |
+| 018 | working-tree-cleanup-s17-close | workflow | in_progress | `.claude/state/sprints/sprint-018-working-tree-cleanup-s17-close/` |
 
-`/end` 가 N 행에 결과(✅ 또는 ⚠)와 한 줄 요약을 기입하고 N+1 행을 갱신한다.
+## Sprint 0~16 (Legacy workflow, 영속 박물관)
+
+기존 12 섹션 dev doc + 7 워커 + receipt cascading 구조. Sprint 16 마감 시점 동결.
+편집 0 (Sprint 17+ 부터 본 영역 수정 금지).
+
+| Sprint | 주제 | dev doc |
+|---|---|---|
+| 0 | Scaffolding | `docs/sprints/sprint-0-scaffolding.md` |
+| 1 | Conversation Loop | `docs/sprints/sprint-1-conversation-loop.md` |
+| 2 | Memory Formation | `docs/sprints/sprint-2-memory-formation.md` |
+| 3 | Recall L1~L3 | `docs/sprints/sprint-3-recall-l1-l3.md` |
+| 4 | Orchestrator | `docs/sprints/sprint-4-orchestrator.md` |
+| 5 | Hyper-Recall | `docs/sprints/sprint-5-hyper-recall.md` |
+| 6 | Failure & Hygiene | `docs/sprints/sprint-6-failure-hygiene.md` |
+| 7 | Polish | `docs/sprints/sprint-7-polish.md` |
+| 8 | PII Policy (D-S8 Rule 1~5) | `docs/sprints/sprint-8-pii-policy.md` |
+| 9 | Inheritance Cleanup (1st) | `docs/sprints/sprint-9-inheritance-cleanup.md` |
+| 10~12 | (3 연속 no-op, origin/main 미동기화 발견) | `docs/sprints/sprint-{10,11,12}-*.md` |
+| 13 | Agent View 1:1 정렬 + 헌법 #13 | `docs/sprints/sprint-13-agent-view-alignment.md` |
+| 14 | Inheritance Cleanup (carry-over 4 회수) | `docs/sprints/sprint-14-inheritance-cleanup.md` |
+| 15 | External Data Arrival (8th inheritance) + PII 0007 + mobile theme | `docs/sprints/sprint-15-external-data-arrival.md` |
+| 16 | Inheritance Cleanup (9th) + 7 워커 폐지 P0 | `docs/sprints/sprint-16-inheritance-cleanup.md` |
+
+## Legacy receipt 영속 가드 (Sprint 0~16)
+
+`scripts/receipt/sprint-{1..15}.sh` + `.receipt-runner/*.mjs` 41 fixture. wrap cascading 패턴 (sprint-N.sh wraps sprint-(N-1).sh). Sprint 16 마감 시점 동결.
+
+회귀 검증 필요 시:
+```bash
+SKIP_OLLAMA=1 SKIP_SPRINT1_E2E=1 bash scripts/receipt/sprint-15.sh
+```
+
+Sprint 17+ 의 신규 receipt 는 `.claude/state/sprints/sprint-NNN-<slug>/receipt.sh` 단독 실행. cascading 없음.
+
+## 전환 결정 근거
+
+- **Sprint 15 D-S15-7-worker-structure-supersede**: 7 워커 구조 → 4 역할 전환 결정.
+- **Sprint 16 P0**: `.claude/agents/*.md` 7 파일 폐지 + receipt 의존 정리.
+- **Sprint 17 (본 sprint)**: leo-agile-builder 패턴 도입 + 본 인덱스 작성.
+- **D-S17-external-data-permanent-defer**: 외부 데이터 영구 보류 → branch=C inheritance-cleanup (Sprint 8~16) 종결.
+
+자세한 내용: `AGENTS.md §8 Legacy → leo Migration Summary` + 메모리 `workflow_leo_agile_builder`.
