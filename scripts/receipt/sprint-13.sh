@@ -36,16 +36,10 @@
 #                         SKIP_SPRINT1_E2E 함의).
 #                         *통과 ≠ /end 받음* — `/end` 는 Ollama UP 으로 전체
 #                         69 단계 PASS.
-#   LEGACY_WRAP_FAIL_TOLERATED=1
-#                       — Sprint 13 신규: Sprint 13 의 7 워커 정렬 (commit
-#                         7419216) 로 sprint-2.sh step 9 ("헌법 inject 검증",
-#                         8 워커 + 2 슬래시커맨드 = 10 파일 가정) 가 임계
-#                         회귀 fail. 이 의도된 부수 효과를 경고로 처리하고
-#                         신규 4 단계 (66~69) 는 그대로 진행. 신규 임계
-#                         workers_with_constitution ≥ 7 이 7 워커 정합을 가드.
-#                         (Sprint 13 의 sprint-2.sh / sprint-9.sh 본체 수정은
-#                         tester 슬라이스 권한 외 — sprint-2 계약을 헌법 7 (b)
-#                         에 따라 보존. carry-over 로 PM 에게 위임.)
+#   (Sprint 15 T1: LEGACY_WRAP_FAIL_TOLERATED 환경 우회 분기 영구 제거 —
+#    O-S14-receipt-runner-stale-fixture-cleanup carry-over 해소 후 sprint-9.sh
+#    가 단독 PASS 함을 가드. 본 wrap 은 LEGACY 분기 없이 sprint-9 fail 시 즉시
+#    fail 한다.)
 #
 # 임계 (D-S13-receipt-threshold-recovery — Sprint 9 누적 + 신규 보강):
 #   - Sprint 9 누적 그대로.
@@ -78,14 +72,7 @@ fi
 # ---------------------------------------------------------------------------
 step "[Sprint 13] 1: Sprint 9 receipt 65 단계 wrap"
 if ! bash "$ROOT/scripts/receipt/sprint-9.sh"; then
-  if [ "${LEGACY_WRAP_FAIL_TOLERATED:-0}" = "1" ]; then
-    echo "  ⚠ Sprint 9 wrap fail — LEGACY_WRAP_FAIL_TOLERATED=1 로 신규 4 단계 진행."
-    echo "  ⚠ 원인 후보: Sprint 13 7 워커 정렬 (commit 7419216) 로 sprint-2.sh step 9"
-    echo "    ('헌법 inject 검증', 10 파일 가정) 가 7 파일 회귀로 fail."
-    echo "  ⚠ tester 슬라이스 권한 외 (sprint-2 ~ sprint-9 본체 수정 불가) → carry-over."
-  else
-    fail "[Sprint 13] Sprint 9 receipt 실패. 위 로그 확인. (LEGACY_WRAP_FAIL_TOLERATED=1 로 우회 가능 — Sprint 13 7 워커 정렬 부수 효과.)"
-  fi
+  fail "[Sprint 13] Sprint 9 receipt 실패. 위 로그 확인."
 fi
 
 S13_RUNNER="$ROOT/scripts/receipt/.receipt-runner"

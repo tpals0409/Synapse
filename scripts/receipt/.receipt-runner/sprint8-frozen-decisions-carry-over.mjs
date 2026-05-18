@@ -1,4 +1,5 @@
-// Sprint 8 receipt — T11 (team-leader: 5 종 carry-over 7~11 결정 frozen) raw text 검증.
+// Sprint 8 receipt — T11 (PM: 5 종 carry-over 7~11 결정 frozen) raw text 검증.
+// (Sprint 13 7419216: team-leader 폐기 → PM 단독 큐레이션. Sprint 15 T1 stale 토큰 정리.)
 //
 // 호출:
 //   node --experimental-strip-types sprint8-frozen-decisions-carry-over.mjs

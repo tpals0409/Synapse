@@ -230,8 +230,8 @@ fi
 echo "    'Cannot find module @synapse/*' 0 건 PASS"
 
 # carry-over 5 — frozen-flag-audit 정규식 alternation grep (FROZEN|SUPERSEDED|...)
-# T8 (team-leader) 가 본 sprint 안에 흡수. lint 스크립트 자체에 alternation 등장 검증 +
-# Sprint 6 dev doc 에 적용 시 PASS.
+# T8 (PM, Sprint 13 7419216 이후 team-leader 폐기) 가 본 sprint 안에 흡수. lint 스크립트 자체에
+# alternation 등장 검증 + Sprint 6 dev doc 에 적용 시 PASS.
 S6_LINT_SH="$ROOT/scripts/lint/frozen-flag-audit.sh"
 if [ ! -f "$S6_LINT_SH" ]; then
   fail "[46/46] frozen-flag-audit.sh 누락: $S6_LINT_SH"
@@ -242,7 +242,7 @@ fi
 if ! grep -qE '\(FROZEN\\?\|' "$S6_LINT_SH"; then
   echo "[46/46] carry-over 5 (D-S6-lint-frozen-flag-audit-regex-alternation):" >&2
   echo "    frozen-flag-audit.sh 에 정규식 alternation '(FROZEN|...)' 패턴 미발견." >&2
-  echo "    T8 (team-leader) 워커가 흡수해야 할 carry-over. 현재 lint 는 FROZEN 단일 패턴." >&2
+  echo "    T8 (PM, team-leader 폐기 후) 워커가 흡수해야 할 carry-over. 현재 lint 는 FROZEN 단일 패턴." >&2
   fail "[46/46] frozen-flag-audit.sh 정규식 alternation 미적용."
 fi
 echo "  carry-over 5 lint 정규식 alternation grep PASS"

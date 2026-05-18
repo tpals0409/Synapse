@@ -12,7 +12,6 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 import {
-  colorsHex,
   copy,
   motion,
   radius,
@@ -50,7 +49,7 @@ type DraftMessage = Message & { pending?: boolean };
 export default function FirstChat() {
   // Sprint 14 (B1) — theme-aware token. 본 sprint 범위는 demoHint 영역 (L208) 만.
   // 다른 light-고정 참조는 carry-over 로 분리 (대규모 swap = 별도 슬라이스).
-  const { colorsHex: themeColorsHex } = useTheme();
+  const { colorsHex } = useTheme();
   const [messages, setMessages] = useState<DraftMessage[]>(() => {
     try {
       return listMessages();
@@ -166,7 +165,7 @@ export default function FirstChat() {
   const data = useMemo(() => messages, [messages]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
+    <View style={{ flex: 1, backgroundColor: colorsHex.paper }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -213,7 +212,7 @@ export default function FirstChat() {
                     lineHeight: 20,
                     // Sprint 14 (B1) — theme-aware. light/dark 모두 정합 (디자인 목업 styles.css
                     // :root 와 [data-theme="dark"] 반전 정합 — paper/ink 합 ≈ 1.16 oklch L).
-                    color: themeColorsHex.ink,
+                    color: colorsHex.ink,
                     opacity: 0.55,
                     textAlign: 'center',
                     letterSpacing: -0.1,
@@ -293,6 +292,7 @@ function SatisfactionSurveyOverlay({
   onSubmit: (score: 1 | 2 | 3 | 4 | 5, comment?: string) => void;
   onDismiss: () => void;
 }) {
+  const { colorsHex } = useTheme();
   const [score, setScore] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [comment, setComment] = useState('');
   const title = marker === 'mid' ? '잠깐, 어땠어요?' : '오늘 대화는 어땠어요?';
@@ -306,7 +306,7 @@ function SatisfactionSurveyOverlay({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: colorsHex.light.ink,
+        backgroundColor: colorsHex.ink,
         opacity: 0.999,
         justifyContent: 'center',
         alignItems: 'center',
@@ -327,10 +327,10 @@ function SatisfactionSurveyOverlay({
         accessibilityRole="alert"
         accessibilityLabel={title}
         style={{
-          backgroundColor: colorsHex.light.paper,
+          backgroundColor: colorsHex.paper,
           borderRadius: radius.lg,
           borderWidth: 0.5,
-          borderColor: colorsHex.light.ink,
+          borderColor: colorsHex.ink,
           paddingHorizontal: spacing.lg,
           paddingVertical: spacing.lg,
           width: '82%',
@@ -343,7 +343,7 @@ function SatisfactionSurveyOverlay({
             fontFamily: role.heading,
             fontSize: 18,
             fontWeight: '600',
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             letterSpacing: -0.2,
           }}
         >
@@ -353,7 +353,7 @@ function SatisfactionSurveyOverlay({
           style={{
             fontFamily: role.meta,
             fontSize: 11.5,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             opacity: 0.55,
           }}
         >
@@ -373,8 +373,8 @@ function SatisfactionSurveyOverlay({
                   height: 38,
                   borderRadius: radius.pill,
                   borderWidth: 0.5,
-                  borderColor: colorsHex.light.ink,
-                  backgroundColor: selected ? colorsHex.light.synapse : colorsHex.light.paper,
+                  borderColor: colorsHex.ink,
+                  backgroundColor: selected ? colorsHex.synapse : colorsHex.paper,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -384,7 +384,7 @@ function SatisfactionSurveyOverlay({
                     fontFamily: role.ui,
                     fontSize: 15,
                     fontWeight: '600',
-                    color: selected ? colorsHex.light.paper : colorsHex.light.ink,
+                    color: selected ? colorsHex.paper : colorsHex.ink,
                   }}
                 >
                   {s}
@@ -397,20 +397,20 @@ function SatisfactionSurveyOverlay({
           value={comment}
           onChangeText={setComment}
           placeholder="자유 코멘트 (선택)"
-          placeholderTextColor={colorsHex.light.ink}
+          placeholderTextColor={colorsHex.ink}
           multiline
           style={{
             marginTop: spacing.sm,
             minHeight: 56,
             maxHeight: 120,
             borderWidth: 0.5,
-            borderColor: colorsHex.light.ink,
+            borderColor: colorsHex.ink,
             borderRadius: radius.md,
             paddingHorizontal: 12,
             paddingVertical: 8,
             fontFamily: role.body,
             fontSize: 14,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
           }}
         />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.sm, justifyContent: 'flex-end' }}>
@@ -423,10 +423,10 @@ function SatisfactionSurveyOverlay({
               paddingVertical: 8,
               borderRadius: radius.pill,
               borderWidth: 0.5,
-              borderColor: colorsHex.light.ink,
+              borderColor: colorsHex.ink,
             }}
           >
-            <Text style={{ fontFamily: role.ui, fontSize: 13, color: colorsHex.light.ink }}>다음에</Text>
+            <Text style={{ fontFamily: role.ui, fontSize: 13, color: colorsHex.ink }}>다음에</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -440,9 +440,9 @@ function SatisfactionSurveyOverlay({
               paddingHorizontal: 14,
               paddingVertical: 8,
               borderRadius: radius.pill,
-              backgroundColor: score === null ? colorsHex.light.paper : colorsHex.light.synapse,
+              backgroundColor: score === null ? colorsHex.paper : colorsHex.synapse,
               borderWidth: score === null ? 0.5 : 0,
-              borderColor: colorsHex.light.ink,
+              borderColor: colorsHex.ink,
               opacity: score === null ? 0.5 : 1,
             }}
           >
@@ -451,7 +451,7 @@ function SatisfactionSurveyOverlay({
                 fontFamily: role.ui,
                 fontSize: 13,
                 fontWeight: '600',
-                color: score === null ? colorsHex.light.ink : colorsHex.light.paper,
+                color: score === null ? colorsHex.ink : colorsHex.paper,
               }}
             >
               보내기
@@ -482,6 +482,7 @@ function renderRow({ item }: ListRenderItemInfo<DraftMessage>) {
 }
 
 function ChatHeader() {
+  const { colorsHex } = useTheme();
   return (
     <View
       style={{
@@ -492,11 +493,11 @@ function ChatHeader() {
         paddingBottom: 14,
         paddingHorizontal: 18,
         borderBottomWidth: 0.5,
-        borderBottomColor: colorsHex.light.ink,
+        borderBottomColor: colorsHex.ink,
         // borderBottomColor 의 50% opacity 효과를 RN 에서 직접 표현
         // (목업: var(--rule) ≈ ink @ 0.08-0.12 alpha) — RN 은 borderColor 에 alpha 미지원
         // → 별도 hairline View 를 두지 않고, 색만 ink 로 두고 굵기로 거리감.
-        backgroundColor: colorsHex.light.paper,
+        backgroundColor: colorsHex.paper,
       }}
     >
       <View
@@ -504,7 +505,7 @@ function ChatHeader() {
           width: 26,
           height: 26,
           borderRadius: radius.pill,
-          backgroundColor: colorsHex.light.ink,
+          backgroundColor: colorsHex.ink,
           opacity: 0.92,
         }}
       />
@@ -514,7 +515,7 @@ function ChatHeader() {
             fontFamily: role.heading,
             fontSize: 17,
             fontWeight: '600',
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             letterSpacing: -0.2,
           }}
         >
@@ -524,7 +525,7 @@ function ChatHeader() {
           style={{
             fontFamily: role.meta,
             fontSize: 10.5,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             opacity: 0.45,
             letterSpacing: 0.2,
             textTransform: 'uppercase',
@@ -539,13 +540,14 @@ function ChatHeader() {
 }
 
 function UserBubble({ text }: { text: string }) {
+  const { colorsHex } = useTheme();
   return (
     <InkRise>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 6 }}>
         <View style={{ maxWidth: '78%' }}>
           <View
             style={{
-              backgroundColor: colorsHex.light.ink,
+              backgroundColor: colorsHex.ink,
               borderTopLeftRadius: 18,
               borderTopRightRadius: 18,
               borderBottomLeftRadius: 18,
@@ -556,7 +558,7 @@ function UserBubble({ text }: { text: string }) {
           >
             <Text
               style={{
-                color: colorsHex.light.paper,
+                color: colorsHex.paper,
                 fontFamily: role.body,
                 fontSize: 15.5,
                 lineHeight: 23,
@@ -573,6 +575,7 @@ function UserBubble({ text }: { text: string }) {
 }
 
 function AIBubble({ text, pending }: { text: string; pending: boolean }) {
+  const { colorsHex } = useTheme();
   return (
     <InkRise>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
@@ -582,7 +585,7 @@ function AIBubble({ text, pending }: { text: string; pending: boolean }) {
             height: 20,
             marginTop: 4,
             borderRadius: radius.pill,
-            backgroundColor: colorsHex.light.synapse,
+            backgroundColor: colorsHex.synapse,
             opacity: 0.85,
           }}
         />
@@ -592,7 +595,7 @@ function AIBubble({ text, pending }: { text: string; pending: boolean }) {
           ) : (
             <Text
               style={{
-                color: colorsHex.light.ink,
+                color: colorsHex.ink,
                 fontFamily: role.body,
                 fontSize: 15.5,
                 lineHeight: 24,
@@ -610,6 +613,7 @@ function AIBubble({ text, pending }: { text: string; pending: boolean }) {
 }
 
 function TypingDots() {
+  const { colorsHex } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -640,7 +644,7 @@ function TypingDots() {
             width: 5,
             height: 5,
             borderRadius: radius.pill,
-            backgroundColor: colorsHex.light.ink,
+            backgroundColor: colorsHex.ink,
             opacity,
           }}
         />
@@ -698,13 +702,14 @@ function Composer({
   onSubmit: () => void;
   disabled: boolean;
 }) {
+  const { colorsHex } = useTheme();
   const hasText = value.trim().length > 0;
   return (
     <View
       style={{
-        backgroundColor: colorsHex.light.paper,
+        backgroundColor: colorsHex.paper,
         borderTopWidth: 0.5,
-        borderTopColor: colorsHex.light.ink,
+        borderTopColor: colorsHex.ink,
         paddingHorizontal: 12,
         paddingTop: 10,
         paddingBottom: 14,
@@ -718,10 +723,10 @@ function Composer({
           flex: 1,
           minHeight: 32,
           maxHeight: 120,
-          backgroundColor: colorsHex.light.paper,
+          backgroundColor: colorsHex.paper,
           borderRadius: 18,
           borderWidth: 0.5,
-          borderColor: colorsHex.light.ink,
+          borderColor: colorsHex.ink,
           paddingHorizontal: 14,
           paddingVertical: 7,
         }}
@@ -730,7 +735,7 @@ function Composer({
           value={value}
           onChangeText={onChangeText}
           placeholder={c.firstChat.placeholder}
-          placeholderTextColor={colorsHex.light.ink}
+          placeholderTextColor={colorsHex.ink}
           multiline
           editable={!disabled}
           onSubmitEditing={onSubmit}
@@ -741,7 +746,7 @@ function Composer({
           style={{
             fontFamily: role.body,
             fontSize: 15,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             letterSpacing: -0.1,
             padding: 0,
             margin: 0,
@@ -758,9 +763,9 @@ function Composer({
           width: 32,
           height: 32,
           borderRadius: radius.pill,
-          backgroundColor: hasText ? colorsHex.light.synapse : colorsHex.light.paper,
+          backgroundColor: hasText ? colorsHex.synapse : colorsHex.paper,
           borderWidth: hasText ? 0 : 0.5,
-          borderColor: colorsHex.light.ink,
+          borderColor: colorsHex.ink,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: pressed ? 0.85 : 1,
@@ -771,7 +776,7 @@ function Composer({
             fontFamily: role.ui,
             fontSize: 14,
             fontWeight: '600',
-            color: hasText ? colorsHex.light.paper : colorsHex.light.ink,
+            color: hasText ? colorsHex.paper : colorsHex.ink,
           }}
         >
           ↑

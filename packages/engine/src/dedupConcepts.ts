@@ -1,5 +1,8 @@
 // Sprint 8 T6 — Concept dedup / alias merge.
-// [DRAFT — T8 외부 데이터 신호 후 dev doc §11 frozen 박음.]
+// [FROZEN v2026-05-18 D-S15-dedup-signature] 알고리즘 시그니처 / 결정성 / 입출력 계약 영구 frozen.
+//   채택/임계 (embedThreshold) 튜닝은 별도 D-S9-concept-dedup reconfirm 으로 분리 (외부 데이터 후).
+//   본 frozen 마크는 dedupConcepts / MergePlan / DedupOptions / DedupConceptInput /
+//   EmbedSimilarityFn / NormalizeLabelFn / DEFAULT_DEDUP_EMBED_THRESHOLD 시그니처 변경 0 가드.
 //
 // 사전 구현 사유 (carry-over 9 우선 직접 추기, 옵션 a 정합):
 //   - 알고리즘 자체는 외부 데이터 신호와 독립 — *결정성 + 정합성* 만 단위 테스트로 검증.

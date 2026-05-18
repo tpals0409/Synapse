@@ -1,4 +1,5 @@
-// Sprint 8 receipt — T1 (team-leader: PII 처리 정책 frozen) raw text 검증.
+// Sprint 8 receipt — T1 (PM: PII 처리 정책 frozen) raw text 검증.
+// (Sprint 13 7419216: team-leader 폐기 → PM 단독 큐레이션. Sprint 15 T1 stale 토큰 정리.)
 //
 // 호출:
 //   node --experimental-strip-types sprint8-pii-policy.mjs

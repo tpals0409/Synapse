@@ -3,7 +3,7 @@
 //
 // 호출:
 //   node --experimental-strip-types sprint9-spawn-prompt-update.mjs
-//   → 8 워커 정의 (`.claude/agents/{team-leader,storage,engine,conversation,
+//   → 7 워커 정의 (`.claude/agents/{conversation,designer,engine,mobile,
 //     orchestrator,mobile,designer,tester}.md`) raw text 검증:
 //      4 종 검증 토큰 모두 8 파일 OR 매칭 (각 토큰 별 ≥ 1 파일 출현):
 //        (1) "외부 데이터 독립성 1차 분류 의무"      — 헌법 9 raw text
@@ -13,8 +13,9 @@
 //   → exit 0 + stdout:
 //      "spawn_prompt_update_pass=1;workers_with_constitution=<n>"
 //
-// dev doc §3 line 52 + §4 line 82~85 정합 — 8 워커 정의 갱신 (단일 작성자
-// 시간창 team-leader, 헌법 #4 강제). 본 fixture 는 메타 정합 가드.
+// dev doc §3 line 52 + §4 line 82~85 정합 — 7 워커 정의 갱신 (단일 작성자
+// 시간창 PM, 헌법 #4 강제). 본 fixture 는 메타 정합 가드.
+// Sprint 13 commit 7419216 정렬 후 team-leader 폐기. Sprint 15 T1 stale 토큰 정리.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,13 +26,12 @@ const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '../../..');
 
 const WORKERS = [
-  'team-leader',
-  'storage',
-  'engine',
   'conversation',
-  'orchestrator',
-  'mobile',
   'designer',
+  'engine',
+  'mobile',
+  'orchestrator',
+  'storage',
   'tester',
 ];
 

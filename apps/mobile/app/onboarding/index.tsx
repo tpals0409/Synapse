@@ -1,18 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { colorsHex, copy, role, radius } from '@synapse/design-system';
+import { copy, role, radius } from '@synapse/design-system';
+import { useTheme } from '../../src/themeStore';
 
 const c = copy.ko;
 
 // 디자인 목업 screens.jsx:30-78 (OnboardingScreen) 1:1.
 // 흐름: SynapseGlyph + hi → sub → (synapse-pulse 도트 3 + hint) → CTA + tagline.
 export default function Onboarding() {
+  const { colorsHex } = useTheme();
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: colorsHex.light.paper,
+        backgroundColor: colorsHex.paper,
         paddingHorizontal: 28,
         paddingTop: 100,
         paddingBottom: 60,
@@ -27,7 +29,7 @@ export default function Onboarding() {
             width: 42,
             height: 42,
             borderRadius: radius.pill,
-            backgroundColor: colorsHex.light.ink,
+            backgroundColor: colorsHex.ink,
             opacity: 0.92,
           }}
         />
@@ -36,7 +38,7 @@ export default function Onboarding() {
             fontFamily: role.heading,
             fontSize: 40,
             fontWeight: '600',
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             letterSpacing: -1.2,
             lineHeight: 42,
             marginTop: 28,
@@ -48,7 +50,7 @@ export default function Onboarding() {
           style={{
             fontFamily: role.body,
             fontSize: 19,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             opacity: 0.66,
             letterSpacing: -0.3,
             lineHeight: 27,
@@ -69,7 +71,7 @@ export default function Onboarding() {
             style={{
               fontFamily: role.meta,
               fontSize: 10,
-              color: colorsHex.light.ink,
+              color: colorsHex.ink,
               opacity: 0.45,
               letterSpacing: 0.4,
               textTransform: 'uppercase',
@@ -87,7 +89,7 @@ export default function Onboarding() {
             style={({ pressed }) => ({
               paddingVertical: 16,
               borderRadius: radius.pill,
-              backgroundColor: colorsHex.light.ink,
+              backgroundColor: colorsHex.ink,
               opacity: pressed ? 0.85 : 1,
               alignItems: 'center',
             })}
@@ -97,7 +99,7 @@ export default function Onboarding() {
                 fontFamily: role.heading,
                 fontSize: 17,
                 fontWeight: '600',
-                color: colorsHex.light.paper,
+                color: colorsHex.paper,
                 letterSpacing: -0.2,
               }}
             >
@@ -109,7 +111,7 @@ export default function Onboarding() {
           style={{
             fontFamily: role.meta,
             fontSize: 9.5,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             opacity: 0.32,
             letterSpacing: 0.5,
             textTransform: 'uppercase',
@@ -128,6 +130,7 @@ export default function Onboarding() {
 // RN Animated 로 직접 재현 (2400ms, opacity 0.4↔1.0, ease-in-out, stagger 400ms).
 // Sprint 3+ 에서 motion.synapsePulse 추가 시 이 블록 교체.
 function PulseDot({ delay }: { delay: number }) {
+  const { colorsHex } = useTheme();
   const opacity = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -158,7 +161,7 @@ function PulseDot({ delay }: { delay: number }) {
         width: 5,
         height: 5,
         borderRadius: radius.pill,
-        backgroundColor: colorsHex.light.synapse,
+        backgroundColor: colorsHex.synapse,
         opacity,
       }}
     />

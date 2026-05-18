@@ -1,0 +1,10 @@
+{
+  "name": "@synapse/export-pipeline",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sprint 15 T5 — PII-aware export pipeline. D-S8-pii-policy 5 Rule 영속화.",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

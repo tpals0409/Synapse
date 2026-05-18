@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { colorsHex, copy, role, spacing } from '@synapse/design-system';
+import { copy, role, spacing } from '@synapse/design-system';
 import {
   EmptyState,
   ErrorState,
@@ -18,6 +18,7 @@ import {
 } from '@synapse/design-system/components';
 import * as recallStore from '../../src/recallStore';
 import type { RecallLogDetail } from '../../src/recallStore';
+import { useTheme } from '../../src/themeStore';
 
 const c = copy.ko;
 
@@ -42,6 +43,7 @@ function rowsFromDetail(details: RecallLogDetail[]): InspectorRow[] {
 }
 
 export default function InspectorScreen() {
+  const { colorsHex } = useTheme();
   const [rows, setRows] = useState<InspectorRow[]>(() => {
     try {
       return rowsFromDetail(recallStore.getRecentDetailed(RECENT_WINDOW_MS));
@@ -65,7 +67,7 @@ export default function InspectorScreen() {
   // Sprint 7 (T6) — Empty/Error 라우팅. node-orbit + thread-draw + recall-emerge 모션은
   // InspectorList / EmptyState (loading variant) 컴포넌트가 자체 박음.
   return (
-    <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
+    <View style={{ flex: 1, backgroundColor: colorsHex.paper }}>
       <Header count={rows.length} />
       <View style={{ flex: 1 }}>
         {loadError ? (
@@ -91,6 +93,7 @@ export default function InspectorScreen() {
 }
 
 function Header({ count }: { count: number }) {
+  const { colorsHex } = useTheme();
   return (
     <View
       style={{
@@ -98,15 +101,15 @@ function Header({ count }: { count: number }) {
         paddingBottom: 14,
         paddingHorizontal: spacing.lg + 2,
         borderBottomWidth: 0.5,
-        borderBottomColor: colorsHex.light.ink,
-        backgroundColor: colorsHex.light.paper,
+        borderBottomColor: colorsHex.ink,
+        backgroundColor: colorsHex.paper,
       }}
     >
       <Text
         style={{
           fontFamily: role.meta,
           fontSize: 10,
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           opacity: 0.45,
           letterSpacing: 0.5,
           textTransform: 'uppercase',
@@ -120,7 +123,7 @@ function Header({ count }: { count: number }) {
           fontFamily: role.heading,
           fontSize: 32,
           fontWeight: '600',
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           letterSpacing: -0.8,
           lineHeight: 36,
         }}
@@ -131,7 +134,7 @@ function Header({ count }: { count: number }) {
         style={{
           fontFamily: role.body,
           fontSize: 13.5,
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           opacity: 0.55,
           fontStyle: 'italic',
           marginTop: 4,
@@ -145,7 +148,7 @@ function Header({ count }: { count: number }) {
             fontFamily: role.heading,
             fontSize: 24,
             fontWeight: '600',
-            color: colorsHex.light.synapse,
+            color: colorsHex.synapse,
             letterSpacing: -0.5,
           }}
         >
@@ -155,7 +158,7 @@ function Header({ count }: { count: number }) {
           style={{
             fontFamily: role.meta,
             fontSize: 9.5,
-            color: colorsHex.light.ink,
+            color: colorsHex.ink,
             opacity: 0.45,
             letterSpacing: 0.4,
             textTransform: 'uppercase',

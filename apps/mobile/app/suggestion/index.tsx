@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { colorsHex, copy, role, spacing } from '@synapse/design-system';
+import { copy, role, spacing } from '@synapse/design-system';
 import {
   DismissButton,
   EmptyState,
@@ -18,12 +18,14 @@ import {
 import type { RecallCandidate } from '@synapse/protocol';
 import * as chatStore from '../../src/chatStore';
 import * as recallStore from '../../src/recallStore';
+import { useTheme } from '../../src/themeStore';
 
 const c = copy.ko;
 
 type Mounted = { decisionId: string; candidates: RecallCandidate[] };
 
 export default function SuggestionScreen() {
+  const { colorsHex } = useTheme();
   const [mounted, setMounted] = useState<Mounted | null>(() => {
     const detail = recallStore
       .getRecentDetailed(Number.POSITIVE_INFINITY)
@@ -51,7 +53,7 @@ export default function SuggestionScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
+    <View style={{ flex: 1, backgroundColor: colorsHex.paper }}>
       <ChatHeader subtitle={c.recall.suggestion.subtitle} />
       <View style={{ flex: 1, paddingTop: spacing.md }}>
         {mounted ? (
@@ -79,6 +81,7 @@ export default function SuggestionScreen() {
 }
 
 function ChatHeader({ subtitle }: { subtitle: string }) {
+  const { colorsHex } = useTheme();
   return (
     <View
       style={{
@@ -86,8 +89,8 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
         paddingBottom: 14,
         paddingHorizontal: 18,
         borderBottomWidth: 0.5,
-        borderBottomColor: colorsHex.light.ink,
-        backgroundColor: colorsHex.light.paper,
+        borderBottomColor: colorsHex.ink,
+        backgroundColor: colorsHex.paper,
       }}
     >
       <Text
@@ -95,7 +98,7 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
           fontFamily: role.heading,
           fontSize: 17,
           fontWeight: '600',
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           letterSpacing: -0.2,
         }}
       >
@@ -105,7 +108,7 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
         style={{
           fontFamily: role.meta,
           fontSize: 10.5,
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           opacity: 0.45,
           letterSpacing: 0.2,
           textTransform: 'uppercase',

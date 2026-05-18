@@ -4,14 +4,16 @@
 
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { colorsHex, copy, role, spacing } from '@synapse/design-system';
+import { copy, role, spacing } from '@synapse/design-system';
 import { EmptyState, GhostHint } from '@synapse/design-system/components';
 import type { RecallLogRow } from '@synapse/protocol';
 import * as recallStore from '../../src/recallStore';
+import { useTheme } from '../../src/themeStore';
 
 const c = copy.ko;
 
 export default function GhostHintScreen() {
+  const { colorsHex } = useTheme();
   const [row, setRow] = useState<RecallLogRow | null>(() => {
     const last = recallStore.getLast();
     return last && last.act === 'ghost'
@@ -26,7 +28,7 @@ export default function GhostHintScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colorsHex.light.paper }}>
+    <View style={{ flex: 1, backgroundColor: colorsHex.paper }}>
       <ChatHeader subtitle={c.recall.ghost.subtitle} />
       <View style={{ flex: 1, paddingTop: spacing.lg }}>
         {row ? (
@@ -46,6 +48,7 @@ export default function GhostHintScreen() {
 }
 
 function ChatHeader({ subtitle }: { subtitle: string }) {
+  const { colorsHex } = useTheme();
   return (
     <View
       style={{
@@ -53,8 +56,8 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
         paddingBottom: 14,
         paddingHorizontal: 18,
         borderBottomWidth: 0.5,
-        borderBottomColor: colorsHex.light.ink,
-        backgroundColor: colorsHex.light.paper,
+        borderBottomColor: colorsHex.ink,
+        backgroundColor: colorsHex.paper,
       }}
     >
       <Text
@@ -62,7 +65,7 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
           fontFamily: role.heading,
           fontSize: 17,
           fontWeight: '600',
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           letterSpacing: -0.2,
         }}
       >
@@ -72,7 +75,7 @@ function ChatHeader({ subtitle }: { subtitle: string }) {
         style={{
           fontFamily: role.meta,
           fontSize: 10.5,
-          color: colorsHex.light.ink,
+          color: colorsHex.ink,
           opacity: 0.45,
           letterSpacing: 0.2,
           textTransform: 'uppercase',

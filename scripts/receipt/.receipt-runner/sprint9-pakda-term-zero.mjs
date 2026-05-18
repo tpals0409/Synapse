@@ -2,7 +2,7 @@
 //
 // 호출:
 //   node --experimental-strip-types sprint9-pakda-term-zero.mjs
-//   → 신규 dev doc 변경분 / 8 워커 정의 헌법 9~12 추기 영역 라인을
+//   → 신규 dev doc 변경분 / 7 워커 정의 헌법 9~12 추기 영역 라인을
 //     컨텍스트 인식 grep 으로 동사 활용형 토큰 0건 검증.
 //   → exit 0 + stdout:
 //      "pakda_term_zero_pass=1;pakda_term_count=0"
@@ -12,7 +12,7 @@
 //   적용 영역 (검증 대상):
 //     (a) docs/sprints/sprint-9-external-data-and-decisions.md §3~§12
 //         (§1~§2 churn 회피 제외 — Sprint 8 에서 raw text 보존)
-//     (b) .claude/agents/{8 워커}.md 파일 line 9~12 (헌법 9~12 추기 영역)
+//     (b) .claude/agents/{7 워커}.md 파일 line 9~12 (헌법 9~12 추기 영역)
 //         (Sprint 11 /end 긴급 통합 수정: c460712 .claude/commands → .claude/agents swap 후속 정합.)
 //
 //   제외 영역 (false positive 회피):
@@ -134,17 +134,16 @@ const allErrors = [...devScan.errors];
 const allHits = [...devScan.hits];
 
 // ---------------------------------------------------------------------------
-// (b) 8 워커 정의 line 9~12 (헌법 9~12 추기 영역) 검증.
+// (b) 7 워커 정의 line 9~12 (헌법 9~12 추기 영역) 검증.
 // 파일별로 헌법 9 시작 라인을 찾아서 4 라인 (9~12) 만 스캔 — line number 가
 // 파일별로 다르므로 토큰 매칭으로 시작점 동적 계산.
 const WORKERS = [
-  'team-leader',
-  'storage',
-  'engine',
   'conversation',
-  'orchestrator',
-  'mobile',
   'designer',
+  'engine',
+  'mobile',
+  'orchestrator',
+  'storage',
   'tester',
 ];
 

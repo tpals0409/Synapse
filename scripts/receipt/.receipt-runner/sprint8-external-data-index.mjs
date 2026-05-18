@@ -1,4 +1,5 @@
-// Sprint 8 receipt — T8 (team-leader: 외부 데이터 분석 리포트) 검증.
+// Sprint 8 receipt — T8 (PM: 외부 데이터 분석 리포트) 검증.
+// (Sprint 13 7419216: team-leader 폐기 → PM 단독 큐레이션. Sprint 15 T1 stale 토큰 정리.)
 //
 // 호출:
 //   node --experimental-strip-types sprint8-external-data-index.mjs
