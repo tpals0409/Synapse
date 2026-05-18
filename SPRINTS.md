@@ -8,7 +8,7 @@
 | Sprint | Slug | Domain | Status | 진입점 |
 |---|---|---|---|---|
 | 017 | leo-workflow-bootstrap | workflow | completed | `.claude/state/sprints/sprint-017-leo-workflow-bootstrap/` |
-| 018 | working-tree-cleanup-s17-close | workflow | in_progress | `.claude/state/sprints/sprint-018-working-tree-cleanup-s17-close/` |
+| 018 | working-tree-cleanup-s17-close | workflow | completed | `.claude/state/sprints/sprint-018-working-tree-cleanup-s17-close/` |
 
 ## Sprint 0~16 (Legacy workflow, 영속 박물관)
 
